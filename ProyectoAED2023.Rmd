@@ -198,3 +198,9 @@ Notamos, tal como esperabamos, la presencia de 9 filas de observaciones faltante
 ```{r}
 ValenBisi[!complete.cases(ValenBisi), ]
 ```
+Acabamos de comprobar que para el identificador 298 no tenemos ningun dato del segundo dataframe, por lo que no tenemos su geolocalización. Dado este caso e investigando sobre esta posible estación y los datos obtenidos hasta el momento, notamos que posiblemente no se trata de una estación, sinó, realmente, tal y como denota su nombre, de un taller donde se reparan las bicicletas(con horario de 6h-15h). Hablaremos de este tema más adelante.
+
+
+
+
+
