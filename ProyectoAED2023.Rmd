@@ -181,3 +181,20 @@ library(dplyr)
 ValenBisi <- ValenBisi_2022 %>%
   left_join(ValenBisi_disponibilidad, by = c("codigo_estacion" = "Numero"))
 ```
+
+
+Después de la combinación que acabamos de realizar, notamos que podemos haber obtenido posibles valores faltantes(missing values) en las distintas columnas del dataframe, ya que ***'left_join()'*** combina las filas de dos dataframes basándose en una o varias columnas comunes, y conserva todas las filas del dataframe izquierdo, llenando con valores nulos (NA) en las columnas del dataframe derecho cuando no hay coincidencias. Miremos que ha ocurrido:
+
+```{r}
+#Valores faltantes por columnas: vfalt_x_col_1
+vfalt <- sapply(ValenBisi, function(x) sum(is.na(x)))
+
+#Visualización
+print(vfalt)
+```
+
+Notamos, tal como esperabamos, la presencia de 9 filas de observaciones faltantes de las columnas **Direccion**, **geo_shape** y **geo_point_2d**, concretamente aquellas que provienen del identificador 298 del que ya hemos hablado. Lo comprobamos filtrando las filas con, al menos, un valor faltante en alguna columna:
+
+```{r}
+ValenBisi[!complete.cases(ValenBisi), ]
+```
