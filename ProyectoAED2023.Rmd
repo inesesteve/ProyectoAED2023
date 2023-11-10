@@ -87,4 +87,22 @@ table(ValenBisi_2022$tramo_horario)
 ```
 Notamos que los valores son ligeramente diferentes a cada tramo horario, lo que refleja que tendremos algunos casos de estaciones con valores faltantes por lo que respecta a alguna de las horas del dia determinadas.
 
+Por tal de seguir con el análisis de la tabla de frecuencias, comprobamos que valores diferentes puede tomar la columna 'codigo_estacion' con ayuda de la función '***unique()***':
+```{r}
+unique(ValenBisi_2022$codigo_estacion)
+```
+Notamos que, pese a que los códigos del 1 al 276 són números consecutivos, hay algunos faltantes sobre los que no tendremos ningún dato, como puede ser el ejemplo de la estación 277, ya que vemos un salto de la estación 276 a la 298. Posteriormente, al realizar el ***'join'*** con el segundo dataset, comentaremos que es lo que ocurre realmente.
+
+Veamos que, efectivamente, el número de elementos de la columna **codigo_estacion*'** no corresponde con el máximo de los códigos que hay en ella, utilizamos las funciones ***length()*** y ***max()*** respectivamente:
+```{r}
+#Conteo del número de valores únicos en la columna codigo_estacion
+length(unique(ValenBisi_2022$codigo_estacion))
+
+#Máximo valor dentro de la columna codigo_estacion
+max(ValenBisi_2022$codigo_estacion)
+```
+
+Finalmente, hemos comprovado que tenemos datos de 277 estaciones diferentes, por lo que, volviendo al resultado de la tabla de frecuencias, tendremos que tenemos datos de todas las estaciones entre las 6h y las 15h, pero en las otras horas tenemos valores faltantes de alguna de las estaciones.
+
+
 
