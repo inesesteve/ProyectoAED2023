@@ -113,3 +113,15 @@ Importamos los datos teniendo en cuenta que el separador es ';':
 ```{r}
 ValenBisi_disponibilidad <- read.csv('./data/ValenBisi_disponibilidad.csv', sep=';')
 ```
+
+Realmente, tal y como hemos comentado anteriormente, solo nos interesarán 4 de sus columnas: **Direccion**, **Numero**, **geo_shape** y **geo_point_2D**. Vamos a detallar mejor porqué necesitamos cada una de elstas columnas:
+
+-'**Direccion**': columna que nos da información detallada de la ubicación de cada una de las estaciones de biciletas, al igual que hacía la columna '**estacion**' del primer dataframe, pero con la diferencia de que esta parece tener un texto más clarificador que nos puede ayudar a posteriori.
+
+1.'**Numero**': su función es muy importante, ya que nos sirve como enlace directo con el anterior dataframe ya que los valores coinciden en cada una de las estaciones. Tanto esta columna como la de 2.'**codigo_estacion**', utilizan identificadores únicos para cada una de las estaciones, por lo que podemos unir los datos razonando a partir de esta variable.
+
+3.'**geo_shape**': columna escrita en formato JSON que contiene coordenadas geográficas de cada estación donde la clave es "coordinates" y el valor es un array que contiene las coordenadas en el orden [longitud, latitud].
+
+4.'**geo_point_2D**': columna que representa un par de coordenadas geográficas, donde el primer valor es la latitud y el segundo valor es la longitud.
+
+ 
