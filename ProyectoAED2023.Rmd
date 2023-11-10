@@ -54,3 +54,20 @@ Con la lectura anterior, hemos creado un nuevo data.frame llamado *'ValenBisi_20
 6.'**numero_de_devoluciones**': columna que representa el número de devoluciones medias de bicicletas.
 
 
+Vemos cual es el tipo datos que tiene cada columna, utilizando la función ***'str()'*** que nos proporciona una descripción concisa de la estructura del dataframe:
+```{r}
+str(ValenBisi_2022)
+```
+Notamos que los elementos de las columnas '**id**', '**codigo_estacion**','**numero_de_prestamos**' y '**numero_de_devoluciones**' són de tipo numérico y los elementos de las columnas '**estacion**' y '**tramo_horario**' de tipo caracter.
+
+
+Buscamos posibles valores faltantes(missing values) en las diistintas columnas del data.frame:
+```{r}
+#Valores faltantes por columnas: vfalt_x_col_1
+vfalt_x_col_1 <- sapply(ValenBisi_2022, function(x) sum(is.na(x)))
+
+#Visualización
+print(vfalt_x_col_1)
+```
+Acabamos de probar que no tenemos ningún valor faltante en ninguna de las columnas de nuestro dataframe, por lo que podemos seguir, por ahora, con tranquilidad con nuestro analisis.
+
