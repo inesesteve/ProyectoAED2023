@@ -200,7 +200,30 @@ ValenBisi[!complete.cases(ValenBisi), ]
 ```
 Acabamos de comprobar que para el identificador 298 no tenemos ningun dato del segundo dataframe, por lo que no tenemos su geolocalización. Dado este caso e investigando sobre esta posible estación y los datos obtenidos hasta el momento, notamos que posiblemente no se trata de una estación, sinó, realmente, tal y como denota su nombre, de un taller donde se reparan las bicicletas(con horario de 6h-15h). Hablaremos de este tema más adelante.
 
+A continuación, vamos a observar cuantos datos faltantes tenemos sobre 'tramo_horaro' en cada una de las estaciones, ya que, tal como hemos observado anteriormente, como tenemos 277 estaciones distintas y el tramo horario es de 1 hora, deberiamos tener un dataframe con $24 \cdot 277= 6648$ filas, pero en cambio, tenemos que nuestro dataframe solamente tiene 6609:
+```{r}
+length(ValenBisi$id)
+```
 
+Tenemos entonces una pregunta que responder:
+Quales són las estaciones sobre las que nos faltan datos?
+
+Para posteriores analisis, separamos nuestro dataframe *ValenBisi* por tramos horarios usando ***'split()'***, que guarda en *ValenBisi_por_tramo*, cada uno de los dataframes referentes a cada tramo horario de la columna **tramo_horario** en una lista:
+```{r}
+ValenBisi_por_tramo <- split(ValenBisi, ValenBisi$tramo_horario)
+
+#Visualización
+#print(ValenBisi_por_tramo)
+```
+
+Notamos que si queremos acceder, por ejemplo, al primero de los dataframes de cada tramo horario concreto, lo debemos hacer, bien con:
+```r
+ValenBisi_por_tramo$`00H - 01H`
+```
+O bien con 
+```r
+ValenBisi_por_tramo[[1]]
+```
 
 
 
