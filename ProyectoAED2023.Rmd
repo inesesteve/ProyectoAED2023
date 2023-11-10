@@ -85,6 +85,6 @@ Hacemos un a tabla de frecuencia sobre nuestra variable para ver detalladamente 
 ```{r}
 table(ValenBisi_2022$tramo_horario)
 ```
-
+Notamos que los valores son ligeramente diferentes a cada tramo horario, lo que refleja que tendremos algunos casos de estaciones con valores faltantes por lo que respecta a alguna de las horas del dia determinadas.
 
 
