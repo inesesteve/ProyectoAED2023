@@ -124,4 +124,18 @@ Realmente, tal y como hemos comentado anteriormente, solo nos interesarán 4 de 
 
 4.'**geo_point_2D**': columna que representa un par de coordenadas geográficas, donde el primer valor es la latitud y el segundo valor es la longitud.
 
+
+Nos quedamos con las columnas que realmente nos interesan usando el operador tubería ***'%>%'*** junto a ***'select()'*** de la siguiente forma:
+```{r}
+library(dplyr)
+
+ValenBisi_disponibilidad <- ValenBisi_disponibilidad %>%
+                            select(Direccion,Numero,geo_shape, geo_point_2d)
+```
+
+Antes de juntar los dos data.frame, vamos a observar también detalladamente este nuevo:
+```{r}
+str(ValenBisi_disponibilidad)
+```
+Notamos que las columnas **Direccion**, **geo_shape** y **geo_point_2d** són de tipo 'caracter', en cambio, la columna **Numero**, es de tipo numérico(concretamente tipo 'int').
  
