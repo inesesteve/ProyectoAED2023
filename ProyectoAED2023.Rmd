@@ -149,3 +149,21 @@ vfalt_x_col_2 <- sapply(ValenBisi_disponibilidad, function(x) sum(is.na(x)))
 print(vfalt_x_col_2)
 ```
 Acabamos de probar que no tenemos ningún valor faltante en ninguna de las columnas de nuestro dataframe, por lo que podemos seguir con nuestro analisis.
+
+
+Antes de efectuar la combinación de nuestros dos data.frames, primero vamos a comprovar, como hemos hecho anteriormente con la columna '**codigo_estacion**' del primer dataframe, qué valores diferentes puede tomar la columna '**Numero**' con ayuda de la función ***'unique()'*** y ***'sort()'***, ya que los datos no están ordenados tal como teniamos en el anterior dataframe, en orden ascendente de los valores de '**Numero**':
+```{r}
+sort(unique(ValenBisi_disponibilidad$Numero))
+```
+A simple vista podemos observar que no tenemos el último valor que sí aparecía en el anterior dataframe, el que tenia como identificador el número 298. Vamos a comprovar si este es realmente el único identificador faltante.
+
+```{r}
+#Conteo del número de valores únicos en la columna codigo_estacion
+length(unique(ValenBisi_disponibilidad$Numero))
+
+#Máximo valor dentro de la columna codigo_estacion
+max(ValenBisi_disponibilidad$Numero)
+```
+Notamos, con ayuda de la visualización en tabla, que en este caso si que coinciden el número total de los identificadores con el máximo de los valores de esta columna, por lo que no hay ningún valor faltante, tal como queríamos comprovar.
+
+
