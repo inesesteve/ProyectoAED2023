@@ -166,4 +166,10 @@ max(ValenBisi_disponibilidad$Numero)
 ```
 Notamos, con ayuda de la visualización en tabla, que en este caso si que coinciden el número total de los identificadores con el máximo de los valores de esta columna, por lo que no hay ningún valor faltante, tal como queríamos comprovar.
 
+Volvamos al dataframe *ValenBisi_2022* para observar que valores toma la fila que tiene como identificador o valor en la columna 'codigo_estacion', el número 298:
+```{r}
+ValenBisi_2022[ValenBisi_2022$codigo_estacion == 298, ]
+```
+Notamos que tenemos datos desde las 6 horas hasta las 15 horas.
+
 
