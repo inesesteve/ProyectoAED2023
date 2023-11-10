@@ -172,4 +172,12 @@ ValenBisi_2022[ValenBisi_2022$codigo_estacion == 298, ]
 ```
 Notamos que tenemos datos desde las 6 horas hasta las 15 horas.
 
+# Combinación de los dos conjuntos de datos
 
+Vamos a  combinar los dos onjuntos de datos tal como hemos ido explicado anteriormente, usaremos ***'left_join()'***:
+```{r}
+library(dplyr)
+
+ValenBisi <- ValenBisi_2022 %>%
+  left_join(ValenBisi_disponibilidad, by = c("codigo_estacion" = "Numero"))
+```
