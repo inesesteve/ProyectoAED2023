@@ -139,3 +139,13 @@ str(ValenBisi_disponibilidad)
 ```
 Notamos que las columnas **Direccion**, **geo_shape** y **geo_point_2d** són de tipo 'caracter', en cambio, la columna **Numero**, es de tipo numérico(concretamente tipo 'int').
  
+ 
+Buscamos posibles valores faltantes(missing values) en las distintas columnas del dataframe:
+```{r}
+#Valores faltantes por columnas: vfalt_x_col_2
+vfalt_x_col_2 <- sapply(ValenBisi_disponibilidad, function(x) sum(is.na(x)))
+
+#Visualización
+print(vfalt_x_col_2)
+```
+Acabamos de probar que no tenemos ningún valor faltante en ninguna de las columnas de nuestro dataframe, por lo que podemos seguir con nuestro analisis.
