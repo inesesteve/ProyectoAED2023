@@ -71,3 +71,20 @@ print(vfalt_x_col_1)
 ```
 Acabamos de probar que no tenemos ningún valor faltante en ninguna de las columnas de nuestro dataframe, por lo que podemos seguir, por ahora, con tranquilidad con nuestro analisis.
 
+
+Como ya hemos observado, los elementos de '**tramo_horario**' son de tipo 'caracter' pero, realmente queremos que transformarlos a tipo 'factor' para futuros análisis. Lo hacemos a continuación a través de la función '***factor()***':
+```{r}
+ValenBisi_2022$tramo_horario <- factor(ValenBisi_2022$tramo_horario, ordered=TRUE)
+```
+
+Hacemos una comprovacion rápida de que, efectivamente, se ha realizado este cambio de tipo:
+```{r}
+class(ValenBisi_2022$tramo_horario)
+```
+Hacemos un a tabla de frecuencia sobre nuestra variable para ver detalladamente cuantos valores hay de cada uno de los niveles presentes en la columna del tramo horario: 
+```{r}
+table(ValenBisi_2022$tramo_horario)
+```
+
+
+
