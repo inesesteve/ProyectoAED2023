@@ -20,7 +20,9 @@ Vamos a analizar el número de préstamos y devoluciones de las bicicletas de **
 
 El trabajo partirá a través de 2 conjuntos de datos, más tarde se podrán incluir otros para hacer futuras comparaciones de nuestros datos. El dataset principal sobre el que trabajaremos, llamado *'ValenBisi_2022.csv'* que podemos encontrar en https://datos.gob.es/es/catalogo/l01462508-valenbisi-2022-alquileres-y-devoluciones, muestra los datos del problema que anteriormente hemos detallado, el número de préstamos y devoluciones de las bicicletas de 'ValenBisi' durante el año 2022. En cambio, el otro dataset que vamos a hacer servir, *'ValenBisi_disponibilidad.csv'*, que podemos encontrar en https://datos.gob.es/es/catalogo/l01462508-valenbisi-disponibilidad y que se actualiza cada 10 minutos, será usado únicamente con la finalidad de recoger la información de dos de sus filas, concretamente aquellas que muestran las coordenadas geográficas de cada una de las estaciones de bicicletas, para el posterior tratamiento de estas.
 
-# Lectura de los primero conjuntos de datos
+# Lectura de los primero conjuntos de datos y su interpretación
+
+## Conjunto de datos ValenBisi_2022
 
 Tal como hemos comentado en la introducción, empezamos importando el primer conjunto de datos sobre el que vamos a trabajar, *'ValenBisi_2022.csv'*, que se encuentra en la carpeta 'data' que hemos creado anteriormente dentro de la mista carpeta donde se encuentra este fichero sobre el que estamos escribiendo '.Rmd'.
 
@@ -105,4 +107,9 @@ max(ValenBisi_2022$codigo_estacion)
 Finalmente, hemos comprovado que tenemos datos de 277 estaciones diferentes, por lo que, volviendo al resultado de la tabla de frecuencias, tendremos que tenemos datos de todas las estaciones entre las 6h y las 15h, pero en las otras horas tenemos valores faltantes de alguna de las estaciones.
 
 
+## Conjunto de datos ValenBisi_disponibilidad
 
+Importamos los datos teniendo en cuenta que el separador es ';':
+```{r}
+ValenBisi_disponibilidad <- read.csv('./data/ValenBisi_disponibilidad.csv', sep=';')
+```
