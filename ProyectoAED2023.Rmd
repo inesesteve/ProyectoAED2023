@@ -1,0 +1,15 @@
+---
+title: Proyecto AED
+author:
+  - name: Inés Esteve Mompó
+  - name: Azael
+  - name: Manuel
+journal: notspecified
+type: article
+simplesummary: 
+endnotes: false
+output: 
+  rticles::mdpi_article:
+    extra_dependencies: longtable
+---
+
