@@ -27,8 +27,11 @@ El trabajo partirá a través de 2 conjuntos de datos, más tarde se podrán inc
 Tal como hemos comentado en la introducción, empezamos importando el primer conjunto de datos sobre el que vamos a trabajar, *'ValenBisi_2022.csv'*, que se encuentra en la carpeta 'data' que hemos creado anteriormente dentro de la mista carpeta donde se encuentra este fichero sobre el que estamos escribiendo '.Rmd'.
 
 La lectura la realizamos haciendo uso de la libreria ***'readr'***. Importamos primeramente esta libreria:
+
+(todas las librerías)
 ```{r}
 library(readr)
+library(tidyr)
 ```
 
 Importamos los datos teniendo en cuenta que el separador es ';':
@@ -224,6 +227,32 @@ O bien con
 ```r
 ValenBisi_por_tramo[[1]]
 ```
+
+## Mapas
+Tratamiento de la columna geo_point_2d
+
+```{r}
+
+Paradas_bici<-ValenBisi_disponibilidad%>%
+  separate(geo_point_2d, into=c("latitud_y","longitud_x"), sep=",")%>% #Hago separate para crear las columnas latitud y longitud
+  mutate(latitud_y = as.numeric(latitud_y))%>% # Pasar las columnas a numérico para poder utilizarlas mas adelante
+  mutate(longitud_x = as.numeric(longitud_x))
+
+```
+
+Ahora creamos el mapa general
+
+
+```{r}
+map <- leaflet() %>%
+  addTiles() %>%  
+  addMarkers(data = Paradas_bici, ~longitud_x, ~latitud_y, label = ~Direccion)
+# Print the map
+print(map)
+```
+
+
+
 
 
 
