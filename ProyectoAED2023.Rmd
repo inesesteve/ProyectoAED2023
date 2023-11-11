@@ -32,6 +32,8 @@ La lectura la realizamos haciendo uso de la libreria ***'readr'***. Importamos p
 ```{r}
 library(readr)
 library(tidyr)
+library(shiny)
+library(leaflet)
 ```
 
 Importamos los datos teniendo en cuenta que el separador es ';':
@@ -308,5 +310,73 @@ map <- leaflet(tramo_14_15) %>%
 print(map)
 
 ```
+
+
+creación de los datos por tramo:
+
+```{r}
+tramos<-sort(unique(ValenBisi$tramo_horario))
+for(i in 1:length(tramos)){
+  datos<-ValenBisi[ValenBisi$tramo_horario==tramos[i],]
+  datos<-na.omit(datos)
+  assign(paste0("df", i), datos)
+}
+```
+
+
+
+
+```{r}
+ui <- fluidPage(
+  sliderInput("slider", "Seleccionar Mapa", min = 1, max = 24, value = 1, step = 1),
+  leafletOutput("map")
+)
+
+server <- function(input, output, session) {
+  output$map <- renderLeaflet({
+    selected_df <- switch(input$slider,
+      "1" = df1,
+      "2" = df2,
+      "3" = df3,
+      "4" = df4,
+      "5" = df5,
+      "6" = df6,
+      "7" = df7,
+      "8" = df8,
+      "9" = df9,
+      "10" = df10,
+      "11" = df11,
+      "12" = df12,
+      "13" = df13,
+      "14" = df14,
+      "15" = df15,
+      "16" = df16,
+      "17" = df17,
+      "18" = df18,
+      "19" = df19,
+      "20" = df20,
+      "21" = df21,
+      "22" = df22,
+      "23" = df23,
+      "24" = df24
+    )
+    
+    leaflet() %>%
+      addTiles() %>%
+      addCircleMarkers(data = selected_df,~longitud_x, ~latitud_y, label = ~Direccion,
+                   color = "black",
+                   weight = 1,
+                   fillColor = ~color_pal(numero_de_prestamos^0.5),  # ajusta el tamaño de los círculos según tus necesidades
+                   radius = 5,
+                   fillOpacity = 1,
+                   popup = ~as.character(numero_de_prestamos))
+  })
+}
+
+shinyApp(ui, server)
+
+```
+
+
 
 
