@@ -248,7 +248,7 @@ Ahora creamos el mapa general
 ```{r}
 map <- leaflet() %>%
   addTiles() %>%  
-  addMarkers(data = Paradas_bici, ~longitud_x, ~latitud_y, label = ~Direccion)
+  addMarkers(data = na.omit(Paradas_bici), ~longitud_x, ~latitud_y, label = ~Direccion)
 # Print the map
 print(map)
 ```
@@ -268,7 +268,7 @@ Para tener un ejemplo de coloreo, voy a tomar el tramo 14-15 h y voy a hacer el 
 ```{r}
 color_pal <- colorNumeric(palette = "Blues", domain = ValenBisi$numero_de_prestamos)
 
-tramo_14_15<-ValenBisi[ValenBisi$tramo_horario=="14H - 15H",]
+tramo_14_15<-na.omit(ValenBisi[ValenBisi$tramo_horario=="14H - 15H",])
 
 map <- leaflet(tramo_14_15) %>%
   addTiles() %>%
@@ -292,7 +292,7 @@ Veo que hay muchas paradas con muy poca concurrencia, y unas pocas con mucha, po
 ```{r}
 color_pal <- colorNumeric(palette = "Blues", domain = ValenBisi$numero_de_prestamos^0.5)
 
-tramo_14_15<-ValenBisi[ValenBisi$tramo_horario=="14H - 15H",]
+tramo_14_15<-na.omit(ValenBisi[ValenBisi$tramo_horario=="14H - 15H",])
 
 map <- leaflet(tramo_14_15) %>%
   addTiles() %>%
