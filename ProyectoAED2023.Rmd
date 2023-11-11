@@ -29,6 +29,9 @@ Tal como hemos comentado en la introducción, empezamos importando el primer con
 La lectura la realizamos haciendo uso de la libreria ***'readr'***. Importamos primeramente esta libreria:
 ```{r}
 library(readr)
+library(tidyr)
+library(ggplot2)
+library(plotly)
 ```
 
 Importamos los datos teniendo en cuenta que el separador es ';':
@@ -206,23 +209,102 @@ length(ValenBisi$id)
 ```
 
 Tenemos entonces una pregunta que responder:
-Quales són las estaciones sobre las que nos faltan datos?
+Cuáles són las estaciones sobre las que nos faltan datos?
 
 Para posteriores analisis, separamos nuestro dataframe *ValenBisi* por tramos horarios usando ***'split()'***, que guarda en *ValenBisi_por_tramo*, cada uno de los dataframes referentes a cada tramo horario de la columna **tramo_horario** en una lista:
 ```{r}
 ValenBisi_por_tramo <- split(ValenBisi, ValenBisi$tramo_horario)
-
+tramos_horarios <- levels(ValenBisi$tramo_horario)
+estaciones_faltantes_count <- ValenBisi %>% group_by(estacion) %>% summarise(Count_Tramo_Horario = sum(length(tramo_horario))) %>%
+arrange(Count_Tramo_Horario, decreasing = TRUE)
+head(estaciones_faltantes_count, 10)
 #Visualización
 #print(ValenBisi_por_tramo)
 ```
+Vemos que hay 9 estaciones que no tienen registro alguno en determinados tramos horarios. La suposición es por que no han alquilado ni devuelto ninguna bicicleta durante esos tramos ningún día del año. Un caso curioso es el de la estación ``298_TALLER`` que podemos intuir que abren de 6 a 15.
 
-Notamos que si queremos acceder, por ejemplo, al primero de los dataframes de cada tramo horario concreto, lo debemos hacer, bien con:
-```r
-ValenBisi_por_tramo$`00H - 01H`
+Comprobamos si existen outliers en nuestras variables:
+
+ * Podemos probar con el criterio del boxplot, es decir que $x < Q1 - 1.5 IQR$, $x > Q3 + 1.5 IQR$
+ 
+```{r}
+initial_x <- "tramo_horario"
+interactive_boxplot <- plot_ly(ValenBisi, x = ~get(initial_x), y = ~numero_de_devoluciones, type = "box", text = ~estacion)
+
+interactive_boxplot %>% layout(
+  title = "Devoluciones por tramo horario",
+  xaxis = list(title = "Tramo Horario"),
+  yaxis = list(title = "Número de devoluciones")
+)
+
+interactive_boxplot2 <- plot_ly(ValenBisi, x = ~get(initial_x), y = ~numero_de_prestamos, type = "box", text = ~estacion)
+
+interactive_boxplot2 %>% layout(
+  title = "Préstamos por tramo horario",
+  xaxis = list(title = "Tramo Horario"),
+  yaxis = list(title = "Número de préstamos")
+)
 ```
-O bien con 
-```r
-ValenBisi_por_tramo[[1]]
+```{r}
+#outliers por tramo horario
+reglaboxplot <- function(x) {
+  #x <- x[!is.na(x)]
+  datsup <- quantile(x, 0.75, na.rm = TRUE)
+  datinf <- quantile(x, 0.25, na.rm = TRUE)
+  disp <- IQR(x)
+  datanom <- x[x > (datsup + 1.5 * disp) | x < (datinf - 1.5 * disp)]
+  return(datanom)
+}
+outbox <- list()
+for (i in 1:24){
+outbox[i] <- list(reglaboxplot(ValenBisi_por_tramo[[i]]$numero_de_devoluciones))
+}
+```
+
+
+```{r}
+# Regla 3 sigma
+reglasigma <- function(x) {
+  #x <- x[!is.na(x)]
+  stnd <- sd(x, na.rm = TRUE)
+  media <- mean(x, na.rm = TRUE)
+  datanom <- x[x > (3 * stnd + media)]
+  return(datanom)
+}
+out3sig <- list()
+for (i in 1:24){
+out3sig[i] <- list(reglasigma(ValenBisi_por_tramo[[i]]$numero_de_devoluciones))
+}
+
+# Identificador Hampel
+reglahampel <- function(x) {
+  #x <- x[!is.na(x)]
+  mediana <- median(x, na.rm = TRUE)
+  MADM <- mad(x, na.rm = TRUE)
+  datanom <- x[x > (3 * MADM + mediana)]
+  return(datanom)
+}
+outham <- list()
+for (i in 1:24){
+outham[i] <- list(reglahampel(ValenBisi_por_tramo[[i]]$numero_de_devoluciones))
+}
+
+# Percentiles
+reglapercentil <- function(x) {
+  #x <- x[!is.na(x)]
+  quant5 <- quantile(x, 0.05, na.rm = TRUE)
+  quant95 <- quantile(x, 0.95, na.rm = TRUE)
+  datanom <- x[x > quant95 | x < quant5]
+  return(datanom)
+}
+outper <- list()
+for (i in 1:24){
+outper[i] <- list(reglapercentil(ValenBisi_por_tramo[[i]]$numero_de_devoluciones))
+}
+```
+
+```{r}
+
 ```
 
 
