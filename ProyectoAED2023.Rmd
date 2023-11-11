@@ -251,8 +251,62 @@ map <- leaflet() %>%
 print(map)
 ```
 
+Hago los cabios a base de datos completa
+
+```{r}
+ValenBisi<-ValenBisi%>%
+  separate(geo_point_2d, into=c("latitud_y","longitud_x"), sep=",")%>% #Hago separate para crear las columnas latitud y longitud
+  mutate(latitud_y = as.numeric(latitud_y))%>% # Pasar las columnas a numérico para poder utilizarlas mas adelante
+  mutate(longitud_x = as.numeric(longitud_x))
+```
 
 
+Para tener un ejemplo de coloreo, voy a tomar el tramo 14-15 h y voy a hacer el mapa con las estaciones, con el color del número de préstamos que recibe cada una:
 
+```{r}
+color_pal <- colorNumeric(palette = "Blues", domain = ValenBisi$numero_de_prestamos)
+
+tramo_14_15<-ValenBisi[ValenBisi$tramo_horario=="14H - 15H",]
+
+map <- leaflet(tramo_14_15) %>%
+  addTiles() %>%
+  addCircleMarkers(~longitud_x, ~latitud_y, label = ~Direccion,
+                   color = "black",
+                   weight = 1,
+                   fillColor = ~color_pal(numero_de_prestamos),  # ajusta el tamaño de los círculos según tus necesidades
+                   radius = 5,
+                   fillOpacity = 1,
+                   popup = ~as.character(numero_de_prestamos))%>%
+  addLegend(position = "bottomright", pal = color_pal, values = ~numero_de_prestamos,
+            title = "Leyenda", opacity = 1)
+  
+# Imprimir el mapa
+print(map)
+
+```
+
+Veo que hay muchas paradas con muy poca concurrencia, y unas pocas con mucha, por lo que hago la raiz cuadrada a los datos para suavizarlos:
+
+```{r}
+color_pal <- colorNumeric(palette = "Blues", domain = ValenBisi$numero_de_prestamos^0.5)
+
+tramo_14_15<-ValenBisi[ValenBisi$tramo_horario=="14H - 15H",]
+
+map <- leaflet(tramo_14_15) %>%
+  addTiles() %>%
+  addCircleMarkers(~longitud_x, ~latitud_y, label = ~Direccion,
+                   color = "black",
+                   weight = 1,
+                   fillColor = ~color_pal(numero_de_prestamos^0.5),  # ajusta el tamaño de los círculos según tus necesidades
+                   radius = 5,
+                   fillOpacity = 1,
+                   popup = ~as.character(numero_de_prestamos))%>%
+  addLegend(position = "bottomright", pal = color_pal, values = ~numero_de_prestamos^0.5,
+            title = "Leyenda", opacity = 1)
+  
+# Imprimir el mapa
+print(map)
+
+```
 
 
