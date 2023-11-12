@@ -222,6 +222,22 @@ head(estaciones_faltantes_count, 10)
 #print(ValenBisi_por_tramo)
 ```
 Vemos que hay 9 estaciones que no tienen registro alguno en determinados tramos horarios. La suposición es por que no han alquilado ni devuelto ninguna bicicleta durante esos tramos ningún día del año. Un caso curioso es el de la estación ``298_TALLER`` que podemos intuir que abren de 6 a 15.
+Procedemos a sacar los estadísticos de préstamos y devoluciones por hora:
+```{r}
+funestad <- function(x){
+  Media <- mean(x, na.rm = TRUE)
+  SD <- sd(x, na.rm = TRUE)
+  Mediana <- median(x, na.rm = TRUE)
+  IQR <- IQR(x, na.rm = TRUE)
+  res <- c("Media" = Media, "SD" = SD, "Mediana" = Mediana, "IQR" = IQR)
+  return(res)
+}
+TablaEsta <- ValenBisi %>% group_by(tramo_horario) %>% 
+  summarize(across(starts_with("num"), funestad)) %>% 
+  mutate(numbre_Esta = rep(c("Media", "SD", "Mediana", "IQR"), each = 1)) %>%
+  pivot_wider(names_from = numbre_Esta, values_from = starts_with("nume"))
+TablaEsta
+```
 
 Comprobamos si existen outliers en nuestras variables:
 
@@ -255,12 +271,14 @@ reglaboxplot <- function(x) {
   datanom <- x[x > (datsup + 1.5 * disp) | x < (datinf - 1.5 * disp)]
   return(datanom)
 }
-outbox <- list()
+outbox_dev <- list()
+outbox_pres <- list()
 for (i in 1:24){
-outbox[i] <- list(reglaboxplot(ValenBisi_por_tramo[[i]]$numero_de_devoluciones))
+outbox_dev[i] <- list(reglaboxplot(ValenBisi_por_tramo[[i]]$numero_de_devoluciones))
+outbox_pres[i] <- list(reglaboxplot(ValenBisi_por_tramo[[i]]$numero_de_prestamos))
 }
 ```
-
+ * También usamos la regla 3 sigma, el identificador de Hampel o la regla de los percentiles para comprobar cuál es el identificador más robusto.
 
 ```{r}
 # Regla 3 sigma
@@ -271,9 +289,11 @@ reglasigma <- function(x) {
   datanom <- x[x > (3 * stnd + media)]
   return(datanom)
 }
-out3sig <- list()
+out3sig_dev <- list()
+out3sig_pres <- list()
 for (i in 1:24){
-out3sig[i] <- list(reglasigma(ValenBisi_por_tramo[[i]]$numero_de_devoluciones))
+out3sig_dev[i] <- list(reglasigma(ValenBisi_por_tramo[[i]]$numero_de_devoluciones))
+out3sig_pres[i] <- list(reglasigma(ValenBisi_por_tramo[[i]]$numero_de_prestamos))
 }
 
 # Identificador Hampel
@@ -284,9 +304,11 @@ reglahampel <- function(x) {
   datanom <- x[x > (3 * MADM + mediana)]
   return(datanom)
 }
-outham <- list()
+outham_dev <- list()
+outham_pres <- list()
 for (i in 1:24){
-outham[i] <- list(reglahampel(ValenBisi_por_tramo[[i]]$numero_de_devoluciones))
+outham_dev[i] <- list(reglahampel(ValenBisi_por_tramo[[i]]$numero_de_devoluciones))
+outham_pres[i] <- list(reglahampel(ValenBisi_por_tramo[[i]]$numero_de_prestamos))
 }
 
 # Percentiles
@@ -297,15 +319,32 @@ reglapercentil <- function(x) {
   datanom <- x[x > quant95 | x < quant5]
   return(datanom)
 }
-outper <- list()
+outper_dev <- list()
+outper_pres <- list()
 for (i in 1:24){
-outper[i] <- list(reglapercentil(ValenBisi_por_tramo[[i]]$numero_de_devoluciones))
+outper_dev[i] <- list(reglapercentil(ValenBisi_por_tramo[[i]]$numero_de_devoluciones))
+outper_pres[i] <- list(reglapercentil(ValenBisi_por_tramo[[i]]$numero_de_prestamos))
 }
 ```
-
+Observamos que con casi cualquier método (excepción los outliers por precentil), clasifica como valores extremos los valores altos.
 ```{r}
+#paradas con mayor número de devoluciones y préstamos
 
+df_top10_pres <- ValenBisi[order(ValenBisi$tramo_horario, -ValenBisi$numero_de_prestamos), ] %>% 
+  group_by(tramo_horario) %>%
+  slice_head(n = 10) %>%
+  select(c("tramo_horario", "numero_de_prestamos", "estacion")) %>%
+  ungroup()
+df_top10_pres
+
+df_top10_dev <- ValenBisi[order(ValenBisi$tramo_horario, -ValenBisi$numero_de_devoluciones), ] %>% 
+  group_by(tramo_horario) %>%
+  slice_head(n = 10) %>%
+  select(c("tramo_horario", "numero_de_devoluciones", "estacion")) %>%
+  ungroup()
+df_top10_dev
 ```
+
 
 
 
