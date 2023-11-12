@@ -245,7 +245,10 @@ Comprobamos si existen outliers en nuestras variables:
  
 ```{r}
 initial_x <- "tramo_horario"
-interactive_boxplot <- plot_ly(ValenBisi, x = ~get(initial_x), y = ~numero_de_devoluciones, type = "box", text = ~estacion)
+interactive_boxplot <- plot_ly(ValenBisi, x = ~get(initial_x),
+                               y = ~numero_de_devoluciones, type = "box", text = ~estacion, jitter = 0.3,
+                               marker = list(color = "rgba(255, 0, 0, 0.5)"), fillcolor = "rgba(255,0,0,0.1)",
+                               line = list(color = "rgba(255,0,0,0.1)"))
 
 interactive_boxplot %>% layout(
   title = "Devoluciones por tramo horario",
@@ -253,7 +256,9 @@ interactive_boxplot %>% layout(
   yaxis = list(title = "Número de devoluciones")
 )
 
-interactive_boxplot2 <- plot_ly(ValenBisi, x = ~get(initial_x), y = ~numero_de_prestamos, type = "box", text = ~estacion)
+interactive_boxplot2 <- plot_ly(ValenBisi, x = ~get(initial_x), y = ~numero_de_prestamos, type = "box", text = ~estacion, jitter = 0.3,
+                              marker = list(color = "rgba(0, 0, 255, 0.5)"), fillcolor = "rgba(0,0,255,0.1)",
+                               line = list(color = "rgba(0,0,255,0.1)"))
 
 interactive_boxplot2 %>% layout(
   title = "Préstamos por tramo horario",
@@ -344,6 +349,30 @@ df_top10_dev <- ValenBisi[order(ValenBisi$tramo_horario, -ValenBisi$numero_de_de
   ungroup()
 df_top10_dev
 ```
+
+```{r}
+#el primer plot es de prueba------
+ggplot(data = ValenBisi, mapping = aes(x = tramo_horario, y = numero_de_devoluciones)) +
+    geom_boxplot(outlier.shape = NA) +
+    geom_jitter(alpha = 0.3, color = "tomato")
+#-----------------------------------------------
+barplot_dev <- ggplot(df_top10_dev, aes(x = tramo_horario, y = numero_de_devoluciones, fill = numero_de_devoluciones, text = paste("Número de devoluciones: ", numero_de_devoluciones, "<br>Estación: ", estacion))) +
+  geom_bar(stat = "identity") +
+  labs(title = "Devoluciones por hora", x = "Tramo Horario", y = "Devoluciones") +
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+ggplotly(barplot_dev, tooltip = "text")
+
+barplot_pres <- ggplot(df_top10_pres, aes(x = tramo_horario, y = numero_de_prestamos, fill = numero_de_prestamos, text = paste("Número de préstamos: ", numero_de_prestamos, "<br>Estación: ", estacion))) +
+  geom_bar(stat = "identity") +
+  labs(title = "Préstamos por hora", x = "Tramo Horario", y = "Préstamos") +
+  scale_fill_gradient(low = "#66c2a5", high = "#fc8d62", name = "numero_de_prestamos") +
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+ggplotly(barplot_pres, tooltip = "text")
+```
+
+
 
 
 
