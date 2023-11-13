@@ -375,8 +375,54 @@ server <- function(input, output, session) {
 
 shinyApp(ui, server)
 
-```
 
+```
+## Comparando con metro y tranvía
+
+Primero transformo la columna de coordenadas, igual que hice con la base de balenbisi:
+
+```{r}
+fgv_bocas <- read_delim("data/fgv-bocas.csv", 
+    delim = ";", escape_double = FALSE, trim_ws = TRUE)
+Paradas_metro<-fgv_bocas%>%
+  separate(geo_point_2d, into=c("latitud_y","longitud_x"), sep=",")%>% #Hago separate para crear las columnas latitud y longitud
+  mutate(latitud_y = as.numeric(latitud_y))%>% # Pasar las columnas a numérico para poder utilizarlas mas adelante
+  mutate(longitud_x = as.numeric(longitud_x))
+
+
+```
+muestro las bocas de metro en el mapa:
+
+```{r}
+map <- leaflet() %>%
+  addTiles() %>%  
+  addMarkers(data = na.omit(Paradas_metro), ~longitud_x, ~latitud_y, label = ~denominacion)
+# Print the map
+print(map)
+```
+Ahora creo una función que calcule la menor distancia entre cada parada de bici a una parada de metro:
+
+
+```{r}
+n<- nrow(Paradas_bici)
+m<-nrow(Paradas_metro)
+auxiliar<-numeric(n)
+
+
+
+for( i in 1:n){
+  d<-100
+  for(j in 1:m){
+    a<-c(Paradas_bici$longitud_x[i],Paradas_bici$latitud_y[i])
+    b<-c(Paradas_metro$longitud_x[j],Paradas_metro$latitud_y[j])
+    d0<-norm(a-b, type = "2")
+    if(d0<d){
+      d<-d0
+    }
+  }
+  auxiliar[i]<-d
+}
+```
 
 
 
