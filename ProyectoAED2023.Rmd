@@ -27,9 +27,13 @@ El trabajo partirá a través de 2 conjuntos de datos, más tarde se podrán inc
 Tal como hemos comentado en la introducción, empezamos importando el primer conjunto de datos sobre el que vamos a trabajar, *'ValenBisi_2022.csv'*, que se encuentra en la carpeta 'data' que hemos creado anteriormente dentro de la mista carpeta donde se encuentra este fichero sobre el que estamos escribiendo '.Rmd'.
 
 La lectura la realizamos haciendo uso de la libreria ***'readr'***. Importamos primeramente esta libreria:
+
+(todas las librerías)
 ```{r}
 library(readr)
 library(tidyr)
+library(shiny)
+library(leaflet)
 library(ggplot2)
 library(plotly)
 library(webshot2)
@@ -426,6 +430,207 @@ corr1filt <- ggplot(Valenbisi_entre_horas) +
 ggplotly(corr1filt, tooltip = "text")
 ```
 
+## Mapas
+Tratamiento de la columna geo_point_2d
+
+```{r}
+
+Paradas_bici<-ValenBisi_disponibilidad%>%
+  separate(geo_point_2d, into=c("latitud_y","longitud_x"), sep=",")%>% #Hago separate para crear las columnas latitud y longitud
+  mutate(latitud_y = as.numeric(latitud_y))%>% # Pasar las columnas a numérico para poder utilizarlas mas adelante
+  mutate(longitud_x = as.numeric(longitud_x))
+
+```
+
+Ahora creamos el mapa general
+
+
+```{r}
+map <- leaflet() %>%
+  addTiles() %>%  
+  addMarkers(data = na.omit(Paradas_bici), ~longitud_x, ~latitud_y, label = ~Direccion)
+# Print the map
+print(map)
+```
+
+Hago los cabios a base de datos completa
+
+```{r}
+ValenBisi<-ValenBisi%>%
+  separate(geo_point_2d, into=c("latitud_y","longitud_x"), sep=",")%>% #Hago separate para crear las columnas latitud y longitud
+  mutate(latitud_y = as.numeric(latitud_y))%>% # Pasar las columnas a numérico para poder utilizarlas mas adelante
+  mutate(longitud_x = as.numeric(longitud_x))
+```
+
+
+Para tener un ejemplo de coloreo, voy a tomar el tramo 14-15 h y voy a hacer el mapa con las estaciones, con el color del número de préstamos que recibe cada una:
+
+```{r}
+color_pal <- colorNumeric(palette = "Blues", domain = ValenBisi$numero_de_prestamos)
+
+tramo_14_15<-na.omit(ValenBisi[ValenBisi$tramo_horario=="14H - 15H",])
+
+map <- leaflet(tramo_14_15) %>%
+  addTiles() %>%
+  addCircleMarkers(~longitud_x, ~latitud_y, label = ~Direccion,
+                   color = "black",
+                   weight = 1,
+                   fillColor = ~color_pal(numero_de_prestamos),  # ajusta el tamaño de los círculos según tus necesidades
+                   radius = 5,
+                   fillOpacity = 1,
+                   popup = ~as.character(numero_de_prestamos))%>%
+  addLegend(position = "bottomright", pal = color_pal, values = ~numero_de_prestamos,
+            title = "Leyenda", opacity = 1)
+  
+# Imprimir el mapa
+print(map)
+
+```
+
+Veo que hay muchas paradas con muy poca concurrencia, y unas pocas con mucha, por lo que hago la raiz cuadrada a los datos para suavizarlos:
+
+```{r}
+color_pal <- colorNumeric(palette = "Blues", domain = ValenBisi$numero_de_prestamos^0.5)
+
+tramo_14_15<-na.omit(ValenBisi[ValenBisi$tramo_horario=="14H - 15H",])
+
+map <- leaflet(tramo_14_15) %>%
+  addTiles() %>%
+  addCircleMarkers(~longitud_x, ~latitud_y, label = ~Direccion,
+                   color = "black",
+                   weight = 1,
+                   fillColor = ~color_pal(numero_de_prestamos^0.5),  # ajusta el tamaño de los círculos según tus necesidades
+                   radius = 5,
+                   fillOpacity = 1,
+                   popup = ~as.character(numero_de_prestamos))%>%
+  addLegend(position = "bottomright", pal = color_pal, values = ~numero_de_prestamos^0.5,
+            title = "Leyenda", opacity = 1)
+  
+# Imprimir el mapa
+print(map)
+
+```
+
+
+creación de los datos por tramo:
+
+```{r}
+tramos<-sort(unique(ValenBisi$tramo_horario))
+for(i in 1:length(tramos)){
+  datos<-ValenBisi[ValenBisi$tramo_horario==tramos[i],]
+  datos<-na.omit(datos)
+  assign(paste0("df", i), datos)
+}
+```
+
+
+
+
+```{r}
+ui <- fluidPage(
+  sliderInput("slider", "Seleccionar Mapa", min = 1, max = 24, value = 1, step = 1),
+  leafletOutput("map")
+)
+
+server <- function(input, output, session) {
+  output$map <- renderLeaflet({
+    selected_df <- switch(input$slider,
+      "1" = df1,
+      "2" = df2,
+      "3" = df3,
+      "4" = df4,
+      "5" = df5,
+      "6" = df6,
+      "7" = df7,
+      "8" = df8,
+      "9" = df9,
+      "10" = df10,
+      "11" = df11,
+      "12" = df12,
+      "13" = df13,
+      "14" = df14,
+      "15" = df15,
+      "16" = df16,
+      "17" = df17,
+      "18" = df18,
+      "19" = df19,
+      "20" = df20,
+      "21" = df21,
+      "22" = df22,
+      "23" = df23,
+      "24" = df24
+    )
+    
+    leaflet() %>%
+      addTiles() %>%
+      addCircleMarkers(data = selected_df,~longitud_x, ~latitud_y, label = ~Direccion,
+                   color = "black",
+                   weight = 1,
+                   fillColor = ~color_pal(numero_de_prestamos^0.5),  # ajusta el tamaño de los círculos según tus necesidades
+                   radius = 5,
+                   fillOpacity = 1,
+                   popup = ~as.character(numero_de_prestamos))
+  })
+}
+
+shinyApp(ui, server)
+
+
+```
+## Comparando con metro y tranvía
+
+Primero transformo la columna de coordenadas, igual que hice con la base de balenbisi:
+
+```{r}
+fgv_bocas <- read_delim("data/fgv-bocas.csv", 
+    delim = ";", escape_double = FALSE, trim_ws = TRUE)
+Paradas_metro<-fgv_bocas%>%
+  separate(geo_point_2d, into=c("latitud_y","longitud_x"), sep=",")%>% #Hago separate para crear las columnas latitud y longitud
+  mutate(latitud_y = as.numeric(latitud_y))%>% # Pasar las columnas a numérico para poder utilizarlas mas adelante
+  mutate(longitud_x = as.numeric(longitud_x))
+
+
+```
+muestro las bocas de metro en el mapa:
+
+```{r}
+map <- leaflet() %>%
+  addTiles() %>%  
+  addMarkers(data = na.omit(Paradas_metro), ~longitud_x, ~latitud_y, label = ~denominacion)
+# Print the map
+print(map)
+```
+Ahora creo una función que calcule la menor distancia entre cada parada de bici a una parada de metro:
+
+
+```{r}
+n<- nrow(Paradas_bici)
+m<-nrow(Paradas_metro)
+auxiliar<-numeric(n)
+
+
+
+for( i in 1:n){
+  d<-100
+  for(j in 1:m){
+    a<-c(Paradas_bici$longitud_x[i],Paradas_bici$latitud_y[i])
+    b<-c(Paradas_metro$longitud_x[j],Paradas_metro$latitud_y[j])
+    d0<-norm(a-b, type = "2")
+    if(d0<d){
+      d<-d0
+    }
+  }
+  auxiliar[i]<-d
+}
+str(auxiliar)
+str(ValenBisi_disponibilidad)
+
+ValenBisi_disponibilidad<-ValenBisi_disponibilidad%>%
+  mutate(distancia_metro_cercano=auxiliar)
+ValenBisi <- ValenBisi_2022 %>%
+  left_join(ValenBisi_disponibilidad, by = c("codigo_estacion" = "Numero"))
+head(ValenBisi)
+```
 
 ```{r}
 corr1_coef_spear <- cor(x = ValenBisi$numero_de_devoluciones, y = ValenBisi$numero_de_prestamos, use = "complete.obs", "spearman")
