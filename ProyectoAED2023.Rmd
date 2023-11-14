@@ -218,12 +218,10 @@ tramos_horarios <- levels(ValenBisi$tramo_horario)
 estaciones_faltantes_count <- ValenBisi %>% group_by(estacion) %>% summarise(Count_Tramo_Horario = sum(length(tramo_horario))) %>%
 arrange(Count_Tramo_Horario, decreasing = TRUE)
 head(estaciones_faltantes_count, 10)
-#Visualización
-#print(ValenBisi_por_tramo)
 ```
-Vemos que hay 9 estaciones que no tienen registro alguno en determinados tramos horarios. La suposición es por que no han alquilado ni devuelto ninguna bicicleta durante esos tramos ningún día del año. Un caso curioso es el de la estación ``298_TALLER`` que podemos intuir que abren de 6 a 15.
+Vemos que hay 9 estaciones que no tienen registro alguno en determinados tramos horarios. La suposición es por que no han alquilado ni devuelto ninguna bicicleta durante esos tramos ningún día del año. Un caso curioso es el de la estación ``298_TALLER`` que podemos intuir que abren de 6:00 a 15:00.
 Procedemos a sacar los estadísticos de préstamos y devoluciones por hora:
-```{r}
+```{r warning=FALSE}
 funestad <- function(x){
   Max <- max(x, na.rm = TRUE) %>% round(2)
   Min <- min(x, na.rm = TRUE) %>% round(2)
@@ -232,15 +230,17 @@ funestad <- function(x){
   Mediana <- median(x, na.rm = TRUE) %>% round(2)
   IQR <- IQR(x, na.rm = TRUE) %>% round(2)
   Total <- sum(x, na.rm = TRUE) %>% round(2)
-  res <- c("Maximo" = Max, "Minimo" = Min, "Media" = Media, "SD" = SD, "Mediana" = Mediana, "IQR" = IQR, "Total" = Total)
+  res <- c("Maximo" = Max, "Minimo" = Min, "Media" = Media,
+           "SD" = SD, "Mediana" = Mediana, "IQR" = IQR, "Total" = Total)
   return(res)
 }
 TablaEsta <- ValenBisi %>% group_by(tramo_horario) %>% 
   summarize(across(starts_with("num"), funestad)) %>% 
-  mutate(numbre_Esta = rep(c("Maximo", "Minimo", "Media", "SD", "Mediana", "IQR", "Total"), each = 1)) %>%
+  mutate(numbre_Esta = rep(c("Maximo", "Minimo", "Media", "SD", "Mediana",
+                             "IQR", "Total"), each = 1)) %>%
   pivot_wider(names_from = numbre_Esta, values_from = starts_with("nume")) %>%
-  mutate(Balance_Total = numero_de_prestamos_Total - numero_de_devoluciones_Total)
-TablaEsta
+  mutate(Balance_Total = numero_de_prestamos_Total - 
+           numero_de_devoluciones_Total)
 ```
 
 Comprobamos si existen outliers en nuestras variables:
@@ -250,8 +250,10 @@ Comprobamos si existen outliers en nuestras variables:
 ```{r}
 initial_x <- "tramo_horario"
 interactive_boxplot <- plot_ly(ValenBisi, x = ~get(initial_x),
-                               y = ~numero_de_devoluciones, type = "box", text = ~estacion, jitter = 0.3,
-                               marker = list(color = "rgba(255, 0, 0, 0.5)"), fillcolor = "rgba(255,0,0,0.1)",
+                               y = ~numero_de_devoluciones, type = "box", 
+                               text = ~estacion, jitter = 0.3,
+                               marker = list(color = "rgba(255, 0, 0, 0.5)"), 
+                               fillcolor = "rgba(255,0,0,0.1)",
                                line = list(color = "rgba(255,0,0,0.1)"))
 
 interactive_boxplot %>% layout(
@@ -260,8 +262,11 @@ interactive_boxplot %>% layout(
   yaxis = list(title = "Número de devoluciones")
 )
 
-interactive_boxplot2 <- plot_ly(ValenBisi, x = ~get(initial_x), y = ~numero_de_prestamos, type = "box", text = ~estacion, jitter = 0.3,
-                              marker = list(color = "rgba(0, 0, 255, 0.5)"), fillcolor = "rgba(0,0,255,0.1)",
+interactive_boxplot2 <- plot_ly(ValenBisi, x = ~get(initial_x), 
+                                y = ~numero_de_prestamos, type = "box", 
+                                text = ~estacion, jitter = 0.3,
+                              marker = list(color = "rgba(0, 0, 255, 0.5)"), 
+                              fillcolor = "rgba(0,0,255,0.1)",
                                line = list(color = "rgba(0,0,255,0.1)"))
 
 interactive_boxplot2 %>% layout(
@@ -283,8 +288,10 @@ reglaboxplot <- function(x) {
 outbox_dev <- list()
 outbox_pres <- list()
 for (i in 1:24){
-outbox_dev[i] <- list(reglaboxplot(ValenBisi_por_tramo[[i]]$numero_de_devoluciones))
-outbox_pres[i] <- list(reglaboxplot(ValenBisi_por_tramo[[i]]$numero_de_prestamos))
+outbox_dev[i] <- list(
+  reglaboxplot(ValenBisi_por_tramo[[i]]$numero_de_devoluciones))
+outbox_pres[i] <- list(
+  reglaboxplot(ValenBisi_por_tramo[[i]]$numero_de_prestamos))
 }
 ```
  * También usamos la regla 3 sigma, el identificador de Hampel o la regla de los percentiles para comprobar cuál es el identificador más robusto.
@@ -301,8 +308,10 @@ reglasigma <- function(x) {
 out3sig_dev <- list()
 out3sig_pres <- list()
 for (i in 1:24){
-out3sig_dev[i] <- list(reglasigma(ValenBisi_por_tramo[[i]]$numero_de_devoluciones))
-out3sig_pres[i] <- list(reglasigma(ValenBisi_por_tramo[[i]]$numero_de_prestamos))
+out3sig_dev[i] <- list(
+  reglasigma(ValenBisi_por_tramo[[i]]$numero_de_devoluciones))
+out3sig_pres[i] <- list(
+  reglasigma(ValenBisi_por_tramo[[i]]$numero_de_prestamos))
 }
 
 # Identificador Hampel
@@ -316,8 +325,10 @@ reglahampel <- function(x) {
 outham_dev <- list()
 outham_pres <- list()
 for (i in 1:24){
-outham_dev[i] <- list(reglahampel(ValenBisi_por_tramo[[i]]$numero_de_devoluciones))
-outham_pres[i] <- list(reglahampel(ValenBisi_por_tramo[[i]]$numero_de_prestamos))
+outham_dev[i] <- list(
+  reglahampel(ValenBisi_por_tramo[[i]]$numero_de_devoluciones))
+outham_pres[i] <- list(
+  reglahampel(ValenBisi_por_tramo[[i]]$numero_de_prestamos))
 }
 
 # Percentiles
@@ -331,22 +342,26 @@ reglapercentil <- function(x) {
 outper_dev <- list()
 outper_pres <- list()
 for (i in 1:24){
-outper_dev[i] <- list(reglapercentil(ValenBisi_por_tramo[[i]]$numero_de_devoluciones))
-outper_pres[i] <- list(reglapercentil(ValenBisi_por_tramo[[i]]$numero_de_prestamos))
+outper_dev[i] <- list(
+  reglapercentil(ValenBisi_por_tramo[[i]]$numero_de_devoluciones))
+outper_pres[i] <- list(
+  reglapercentil(ValenBisi_por_tramo[[i]]$numero_de_prestamos))
 }
 ```
 Observamos que con casi cualquier método (excepción los outliers por precentil), clasifica como valores extremos los valores altos.
 ```{r}
 #paradas con mayor número de devoluciones y préstamos
 
-df_top10_pres <- ValenBisi[order(ValenBisi$tramo_horario, -ValenBisi$numero_de_prestamos), ] %>% 
+df_top10_pres <- ValenBisi[order(ValenBisi$tramo_horario,
+                                 -ValenBisi$numero_de_prestamos), ] %>% 
   group_by(tramo_horario) %>%
   slice_head(n = 10) %>%
   select(c("tramo_horario", "numero_de_prestamos", "estacion")) %>%
   ungroup()
 df_top10_pres
 
-df_top10_dev <- ValenBisi[order(ValenBisi$tramo_horario, -ValenBisi$numero_de_devoluciones), ] %>% 
+df_top10_dev <- ValenBisi[order(ValenBisi$tramo_horario,
+                                -ValenBisi$numero_de_devoluciones), ] %>% 
   group_by(tramo_horario) %>%
   slice_head(n = 10) %>%
   select(c("tramo_horario", "numero_de_devoluciones", "estacion")) %>%
@@ -355,14 +370,12 @@ df_top10_dev
 ```
 
 ```{r}
-#el primer plot es de prueba------
-ggplot(data = ValenBisi, mapping = aes(x = tramo_horario, y = numero_de_devoluciones)) +
-    geom_boxplot(outlier.shape = NA) +
-    geom_jitter(alpha = 0.3, color = "tomato")
-#-----------------------------------------------
-
 # plotbar acumulativa del top 10 préstamos y devoluciones
-barplot10_dev <- ggplot(df_top10_dev, aes(x = tramo_horario, y = numero_de_devoluciones, fill = numero_de_devoluciones, text = paste("Número de devoluciones: ", numero_de_devoluciones, "<br>Estación: ", estacion))) +
+barplot10_dev <- ggplot(df_top10_dev, aes(x = tramo_horario,
+                                          y = numero_de_devoluciones,
+                                          fill = numero_de_devoluciones,
+                                          text = paste("Número de devoluciones: ",
+                                                       numero_de_devoluciones, "<br>Estación: ", estacion))) +
   geom_bar(stat = "identity") +
   labs(title = "Devoluciones por hora", x = "Tramo Horario", y = "Devoluciones") +
   scale_fill_gradient(name = "Número de Devoluciones") +
@@ -370,7 +383,11 @@ barplot10_dev <- ggplot(df_top10_dev, aes(x = tramo_horario, y = numero_de_devol
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ggplotly(barplot10_dev, tooltip = "text")
 
-barplot10_pres <- ggplot(df_top10_pres, aes(x = tramo_horario, y = numero_de_prestamos, fill = numero_de_prestamos, text = paste("Número de préstamos: ", numero_de_prestamos, "<br>Estación: ", estacion))) +
+barplot10_pres <- ggplot(df_top10_pres, aes(x = tramo_horario,
+                                            y = numero_de_prestamos,
+                                            fill = numero_de_prestamos,
+                                            text = paste("Número de préstamos: ",
+                                                         numero_de_prestamos, "<br>Estación: ", estacion))) +
   geom_bar(stat = "identity") +
   labs(title = "Préstamos por hora", x = "Tramo Horario", y = "Préstamos") +
   scale_fill_gradient(low = "#66c2a5", high = "#fc8d62", name = "Número de Préstamos") +
@@ -381,7 +398,11 @@ ggplotly(barplot10_pres, tooltip = "text")
 
 ```{r}
 # plotbar acumulativa total préstamos y devoluciones
-barplot_dev <- ggplot(ValenBisi, aes(x = tramo_horario, y = numero_de_devoluciones, fill = numero_de_devoluciones, text = paste("Número de devoluciones: ", numero_de_devoluciones, "<br>Estación: ", estacion))) +
+barplot_dev <- ggplot(ValenBisi, aes(x = tramo_horario,
+                                     y = numero_de_devoluciones,
+                                     fill = numero_de_devoluciones,
+                                     text = paste("Número de devoluciones: ",
+                                                  numero_de_devoluciones, "<br>Estación: ", estacion))) +
   geom_bar(stat = "identity") +
   labs(title = "Devoluciones por hora", x = "Tramo Horario", y = "Devoluciones") +
   scale_fill_gradient(name = "Número de Devoluciones") +
@@ -389,7 +410,11 @@ barplot_dev <- ggplot(ValenBisi, aes(x = tramo_horario, y = numero_de_devolucion
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ggplotly(barplot_dev, tooltip = "text")
 
-barplot_pres <- ggplot(ValenBisi, aes(x = tramo_horario, y = numero_de_prestamos, fill = numero_de_prestamos, text = paste("Número de préstamos: ", numero_de_prestamos, "<br>Estación: ", estacion))) +
+barplot_pres <- ggplot(ValenBisi, aes(x = tramo_horario,
+                                      y = numero_de_prestamos,
+                                      fill = numero_de_prestamos,
+                                      text = paste("Número de préstamos: ",
+                                                   numero_de_prestamos, "<br>Estación: ", estacion))) +
   geom_bar(stat = "identity") +
   labs(title = "Préstamos por hora", x = "Tramo Horario", y = "Préstamos") +
   scale_fill_gradient(low = "#66c2a5", high = "#fc8d62", name = "Número de Préstamos") +
@@ -402,9 +427,20 @@ Análisis bivariante cuantitativas:
 
 ```{r}
 corr1 <- ggplot(ValenBisi) + 
-  geom_point(aes(x = numero_de_devoluciones, y = numero_de_prestamos, color = tramo_horario, alpha = 0.5, text = paste("Tramo Horario: ", tramo_horario, "<br>Estación: ", estacion, "<br>Número de devoluciones: ", numero_de_devoluciones, "<br>Número de préstamos: ", numero_de_prestamos))) + 
-  labs(title = "Correlación número de préstamos y devoluciones", x = "Número de devoluciones", y = "Número de préstamos", color = "Tramo Horario", alpha = "") +
-  geom_smooth(aes(x = numero_de_devoluciones, y = numero_de_prestamos), method = "lm", se = FALSE, color = "blue", size = 0.4, linetype = "dashed")
+  geom_point(aes(x = numero_de_devoluciones,
+                 y = numero_de_prestamos,
+                 color = tramo_horario, alpha = 0.5,
+                 text = paste("Tramo Horario: ",
+                              tramo_horario, "<br>Estación: ",
+                              estacion, "<br>Número de devoluciones: ",
+                              numero_de_devoluciones,
+                              "<br>Número de préstamos: ", numero_de_prestamos))) + 
+  labs(title = "Correlación número de préstamos y devoluciones",
+       x = "Número de devoluciones", y = "Número de préstamos",
+       color = "Tramo Horario", alpha = "") +
+  geom_smooth(aes(x = numero_de_devoluciones,
+                  y = numero_de_prestamos), method = "lm",
+              se = FALSE, color = "blue", size = 0.4, linetype = "dashed")
   
 
 ggplotly(corr1, tooltip = "text")
@@ -414,16 +450,65 @@ Ahora observaremos los habitos nocturnos de los ciclistas:
 #Prueba flujo de personas (filtrar horas)
 tram_filt1 = "07H - 08H"
 tram_filt2 = "23H - 24H"
-Valenbisi_entre_horas <- ValenBisi %>% filter(tramo_horario < tram_filt1 | tramo_horario > tram_filt2)
+Valenbisi_entre_horas <- ValenBisi %>% 
+  filter(tramo_horario < tram_filt1 | tramo_horario > tram_filt2)
 
 corr1filt <- ggplot(Valenbisi_entre_horas) + 
-  geom_point(aes(x = numero_de_devoluciones, y = numero_de_prestamos, color = tramo_horario, alpha = 0.5, text = paste("Tramo Horario: ", tramo_horario, "<br>Estación: ", estacion, "<br>Número de devoluciones: ", numero_de_devoluciones, "<br>Número de préstamos: ", numero_de_prestamos))) + 
-  labs(title = "Correlación número de préstamos y devoluciones desde las 00:00 a las 07:00", x = "Número de devoluciones", y = "Número de préstamos", color = "Tramo Horario", alpha = "") +
-  geom_smooth(aes(x = numero_de_devoluciones, y = numero_de_prestamos), method = "lm", se = FALSE, color = "blue", size = 0.4, linetype = "dashed")
+  geom_point(aes(x = numero_de_devoluciones,
+                 y = numero_de_prestamos, color = tramo_horario,
+                 alpha = 0.5, text = paste("Tramo Horario: ",
+                                           tramo_horario, "<br>Estación: ",
+                                           estacion, "<br>Número de devoluciones: ",
+                                           numero_de_devoluciones,
+                                           "<br>Número de préstamos: ", numero_de_prestamos))) + 
+  labs(title = "Correlación número de préstamos y devoluciones desde las 00:00 a las 07:00",
+       x = "Número de devoluciones", y = "Número de préstamos", color = "Tramo Horario", alpha = "") +
+  geom_smooth(aes(x = numero_de_devoluciones,
+                  y = numero_de_prestamos), method = "lm",
+              se = FALSE, color = "blue", size = 0.4, linetype = "dashed")
   
 
 ggplotly(corr1filt, tooltip = "text")
 ```
+
+```{r}
+corr1_coef_spear <- cor(x = ValenBisi$numero_de_devoluciones,
+                        y = ValenBisi$numero_de_prestamos,
+                        use = "complete.obs", "spearman")
+corr1_coef_spear
+
+corr1_coef_pear <- cor(x = ValenBisi$numero_de_devoluciones,
+                       y = ValenBisi$numero_de_prestamos,
+                       use = "complete.obs", "pearson")
+corr1_coef_pear #correlación lineal (< 0.8)
+
+cov1_coef_spear <- cov(x = ValenBisi$numero_de_devoluciones,
+                       y = ValenBisi$numero_de_prestamos,
+                       use = "complete.obs", "spearman")
+cov1_coef_spear
+```
+
+```{r}
+#plot balance préstamos/devoluciones por hora (todas las estaciones)
+Balance_Total_plot <- ggplot(TablaEsta,
+                             aes(x = tramo_horario,
+                                 y = Balance_Total,
+                                 fill = factor(sign(Balance_Total)))) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = c("red", "blue"),
+                    name = "",
+                    labels = c("Devoluciones", "Préstamos")) +
+  labs(x = "Tramo Horario", y = "", title = "Balance Total") +
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+Balance_Total_plot
+```
+Pero, ¿A lo largo del año hay el mismo número de devoluciones que de préstamos entre todas las paradas?
+
+```{r}
+sum(TablaEsta$Balance_Total)
+```
+Han desaparecido 2586 bicicletas.
 
 ## Mapas
 Tratamiento de la columna geo_point_2d
@@ -627,32 +712,7 @@ ValenBisi <- ValenBisi_2022 %>%
 head(ValenBisi)
 ```
 
-```{r}
-corr1_coef_spear <- cor(x = ValenBisi$numero_de_devoluciones, y = ValenBisi$numero_de_prestamos, use = "complete.obs", "spearman")
-corr1_coef_spear
 
-corr1_coef_pear <- cor(x = ValenBisi$numero_de_devoluciones, y = ValenBisi$numero_de_prestamos, use = "complete.obs", "pearson")
-corr1_coef_pear #correlación lineal (< 0.8)
-
-cov1_coef_spear <- cov(x = ValenBisi$numero_de_devoluciones, y = ValenBisi$numero_de_prestamos, use = "complete.obs", "spearman")
-cov1_coef_spear
-```
-```{r}
-#plot balance préstamos/devoluciones por hora (todas las estaciones)
-Balance_Total_plot <- ggplot(TablaEsta, aes(x = tramo_horario, y = Balance_Total, fill = factor(sign(Balance_Total)))) +
-  geom_bar(stat = "identity") +
-  scale_fill_manual(values = c("red", "blue"), name = "", labels = c("Devoluciones", "Préstamos")) +
-  labs(x = "Tramo Horario", y = "", title = "Balance Total") +
-  theme_minimal() + 
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-Balance_Total_plot
-```
-Pero, ¿A lo largo del año hay el mismo número de devoluciones que de préstamos entre todas las paradas?
-
-```{r}
-sum(TablaEsta$Balance_Total)
-```
-Han desaparecido 2586 bicicletas.¿¿??
 
 
 
