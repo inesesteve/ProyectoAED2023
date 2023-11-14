@@ -240,9 +240,9 @@ Comprobamos si existen outliers en nuestras variables:
 
  * Podemos probar con el criterio del boxplot, es decir que $x < Q1 - 1.5 IQR$, $x > Q3 + 1.5 IQR$
  
-```{r echo=FALSE, message=FALSE, warning=FALSE}
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.align='center'}
 initial_x <- "tramo_horario"
-interactive_boxplot <- plot_ly(ValenBisi, x = ~get(initial_x),
+interactive_boxplot <- ggplot(ValenBisi, x = ~get(initial_x),
                                y = ~numero_de_devoluciones, type = "box", 
                                text = ~estacion, jitter = 0.3,
                                marker = list(color = "rgba(255, 0, 0, 0.5)"), 
@@ -255,7 +255,7 @@ interactive_boxplot %>% layout(
   yaxis = list(title = "Número de devoluciones")
 )
 
-interactive_boxplot2 <- plot_ly(ValenBisi, x = ~get(initial_x), 
+interactive_boxplot2 <- ggplot(ValenBisi, x = ~get(initial_x), 
                                 y = ~numero_de_prestamos, type = "box", 
                                 text = ~estacion, jitter = 0.3,
                               marker = list(color = "rgba(0, 0, 255, 0.5)"), 
@@ -267,6 +267,7 @@ interactive_boxplot2 %>% layout(
   xaxis = list(title = "Tramo Horario"),
   yaxis = list(title = "Número de préstamos")
 )
+
 ```
 
 ```{r message=FALSE, warning=FALSE, include=FALSE}
@@ -376,7 +377,8 @@ barplot10_dev <- ggplot(df_top10_dev, aes(x = tramo_horario,
   scale_fill_gradient(name = "Número de Devoluciones") +
   theme_minimal() + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
-ggplotly(barplot10_dev, tooltip = "text")
+barplot10_dev
+#ggplotly(barplot10_dev, tooltip = "text")
 
 barplot10_pres <- ggplot(df_top10_pres, aes(x = tramo_horario,
                                             y = numero_de_prestamos,
@@ -388,7 +390,8 @@ barplot10_pres <- ggplot(df_top10_pres, aes(x = tramo_horario,
   scale_fill_gradient(low = "#66c2a5", high = "#fc8d62", name = "Número de Préstamos") +
   theme_minimal() + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
-ggplotly(barplot10_pres, tooltip = "text")
+barplot10_pres
+#ggplotly(barplot10_pres, tooltip = "text")
 ```
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
@@ -403,8 +406,8 @@ barplot_dev <- ggplot(ValenBisi, aes(x = tramo_horario,
   scale_fill_gradient(name = "Número de Devoluciones") +
   theme_minimal() + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
-ggplotly(barplot_dev, tooltip = "text")
-
+#ggplotly(barplot_dev, tooltip = "text")
+barplot_dev
 barplot_pres <- ggplot(ValenBisi, aes(x = tramo_horario,
                                       y = numero_de_prestamos,
                                       fill = numero_de_prestamos,
@@ -415,7 +418,8 @@ barplot_pres <- ggplot(ValenBisi, aes(x = tramo_horario,
   scale_fill_gradient(low = "#66c2a5", high = "#fc8d62", name = "Número de Préstamos") +
   theme_minimal() + 
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
-ggplotly(barplot_pres, tooltip = "text")
+barplot_pres
+#ggplotly(barplot_pres, tooltip = "text")
 ```
 
 Análisis bivariante cuantitativas:
@@ -437,8 +441,8 @@ corr1 <- ggplot(ValenBisi) +
                   y = numero_de_prestamos), method = "lm",
               se = FALSE, color = "blue", size = 0.4, linetype = "dashed")
   
-
-ggplotly(corr1, tooltip = "text")
+corr1
+#ggplotly(corr1, tooltip = "text")
 ```
 Ahora observaremos los habitos nocturnos de los ciclistas:
 ```{r message=FALSE, warning=FALSE, include=FALSE}
@@ -462,8 +466,8 @@ corr1filt <- ggplot(Valenbisi_entre_horas) +
                   y = numero_de_prestamos), method = "lm",
               se = FALSE, color = "blue", size = 0.4, linetype = "dashed")
   
-
-ggplotly(corr1filt, tooltip = "text")
+corr1filt
+#ggplotly(corr1filt, tooltip = "text")
 ```
 
 ```{r message=FALSE, warning=FALSE, include=FALSE}
