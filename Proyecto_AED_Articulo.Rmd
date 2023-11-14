@@ -543,10 +543,12 @@ Paradas_bici<-ValenBisi_disponibilidad%>%
 
 ```
 
+\newpage
+
 Creación del mapa general
 
 
-```{r}
+```{r warning=FALSE, include=FALSE}
 map <- leaflet() %>%
   addTiles() %>%  
   addMarkers(data = na.omit(Paradas_bici), ~longitud_x, ~latitud_y,
@@ -554,9 +556,19 @@ map <- leaflet() %>%
 map
 ```
 
+```{r echo=FALSE}
+library(png)
+
+imagen_png <- readPNG("graficas/paradas_bici.png")
+plot(0, 0, type = "n", xlim = c(0, 1), ylim = c(0, 1), xlab = "", ylab = "")
+rasterImage(imagen_png, 0, 0, 1, 1)
+```
+
+\newpage
+
 Cambios en la base de datos completa
 
-```{r}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 ValenBisi<-ValenBisi%>%
   separate(geo_point_2d, into=c("latitud_y","longitud_x"), sep=",")%>% 
   mutate(latitud_y = as.numeric(latitud_y))%>% 
@@ -564,9 +576,9 @@ ValenBisi<-ValenBisi%>%
 ```
 
 
-Para tener un ejemplo de coloreo, voy a tomar el tramo 14-15 h y voy a hacer el mapa con las estaciones, con el color del número de préstamos que recibe cada una:
+Ejemplo con el tramo 14-15 h 
 
-```{r}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 color_pal <- colorNumeric(palette = "Blues", domain = 
                             ValenBisi$numero_de_prestamos)
 
@@ -589,9 +601,8 @@ map
 
 ```
 
-Veo que hay muchas paradas con muy poca concurrencia, y unas pocas con mucha, por lo que hago la raiz cuadrada a los datos para suavizarlos:
 
-```{r echo=FALSE, message=FALSE, warning=FALSE}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 color_pal <- colorNumeric(palette = "Blues", domain = ValenBisi$numero_de_prestamos^0.5)
 
 tramo_14_15<-na.omit(ValenBisi[ValenBisi$tramo_horario=="14H - 15H",])
@@ -610,6 +621,12 @@ map <- leaflet(tramo_14_15) %>%
   
 map
 
+```
+
+```{r echo=FALSE}
+imagen_png <- readPNG("graficas/prestamos_bici.png")
+plot(0, 0, type = "n", xlim = c(0, 1), ylim = c(0, 1), xlab = "", ylab = "")
+rasterImage(imagen_png, 0, 0, 1, 1)
 ```
 
 
@@ -747,17 +764,25 @@ Paradas_metro<-fgv_bocas%>%
 ```
 muestro las bocas de metro en el mapa:
 
-```{r}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 map <- leaflet() %>%
   addTiles() %>%  
   addMarkers(data = na.omit(Paradas_metro), ~longitud_x, ~latitud_y, label = ~denominacion)
 # Print the map
 map
 ```
+
+```{r echo=FALSE}
+imagen_png <- readPNG("graficas/paradas_metro.png")
+plot(0, 0, type = "n", xlim = c(0, 1), ylim = c(0, 1), xlab = "", ylab = "")
+rasterImage(imagen_png, 0, 0, 1, 1)
+```
+
+
 Ahora creo una función que calcule la menor distancia entre cada parada de bici a una parada de metro 
 
 
-```{r message=FALSE, warning=FALSE, include=FALSE}
+```{r message=FALSE, warning=FALSE}
 n<- nrow(Paradas_bici)
 m<-nrow(Paradas_metro)
 auxiliar<-numeric(n)
@@ -791,7 +816,7 @@ head(ValenBisi)
 ```
 Y el mapa de las paradas por metro más cercano
 
-```{r}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 color_pal <- colorNumeric(palette = "Blues", domain = ValenBisi$distancia_metro_cercano^0.5,reverse = T)
 
 tramo_14_15<-na.omit(ValenBisi[ValenBisi$tramo_horario=="14H - 15H",])
@@ -813,11 +838,20 @@ map
 
 ```
 
+```{r echo=FALSE}
+imagen_png <- readPNG("graficas/cercania_metro.png")
+plot(0, 0, type = "n", xlim = c(0, 1), ylim = c(0, 1), xlab = "", ylab = "")
+rasterImage(imagen_png, 0, 0, 1, 1)
+```
+
+
 ```{r}
 cor(ValenBisi$numero_de_prestamos,ValenBisi$distancia_metro_cercano, use="complete.obs", method="pearson")
 cor(ValenBisi$numero_de_prestamos,ValenBisi$distancia_metro_cercano, use="complete.obs", method="spearman")
 ```
 No vemos que haya una correlación, pero tiene sentido que en las zonas que tienen metros cerca, haya más afluencia de gente, por lo que también se use más el valenbisi.
+
+\newpage
 
 # Conclusión
 
