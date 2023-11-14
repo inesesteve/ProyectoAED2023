@@ -1,0 +1,806 @@
+---
+title: Proyecto AED
+author:
+  - name: Inés Esteve
+  - name: Azael García
+  - name: Manuel Rubio
+journal: notspecified
+type: article
+simplesummary: En este proyecto, vamos a analizar el número de préstamos y devoluciones de las bicicletas de 'ValenBisi' durante el año 2022 en cada una de sus estaciones ubicadas por toda la ciudad de Valencia. También compararemos, entre otras cosas, la posible influencia que puede tener, sobre el alquiler de estas bicicletas, estar cerca de otros medios de transporte público de la ciudad como podría ser el ejemplo de 'MetroValencia'.
+endnotes: false
+output: 
+  rticles::mdpi_article:
+    extra_dependencies: longtable
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning=FALSE)
+```
+
+```r
+library(readr)
+library(dplyr)
+library(tidyr)
+library(shiny)
+library(leaflet)
+library(ggplot2)
+library(plotly)
+library(webshot2)
+```
+```{r include=FALSE}
+library(readr)
+library(dplyr)
+library(tidyr)
+library(shiny)
+library(leaflet)
+library(ggplot2)
+library(plotly)
+library(webshot2)
+```
+
+# Introducción. Descripción del proyecto
+
+El trabajo partirá a través de 2 conjuntos de datos, el dataset principal sobre el que trabajaremos, llamado *'ValenBisi_2022.csv'* que podemos encontrar en https://datos.gob.es/es/catalogo/l01462508-valenbisi-2022-alquileres-y-devoluciones, y que muestra los datos del problema que anteriormente hemos detallado y el otro dataset, *'ValenBisi_disponibilidad.csv'*, que podemos encontrar en https://datos.gob.es/es/catalogo/l01462508-valenbisi-disponibilidad y que se actualiza cada 10 minutos, será usado únicamente con la finalidad de recoger la información de dos de sus filas, concretamente la que muestra las coordenadas geográficas de cada una de las estaciones de bicicletas y otra que muestra los nombres de las estaciones de forma diferente.
+
+# Lectura de los primero conjuntos de datos y su interpretación
+
+## Conjunto de datos ValenBisi_2022
+
+Tal como hemos comentado en la introducción, empezamos importando *'ValenBisi_2022.csv'*, que se encuentra en la carpeta 'data' que hemos creado anteriormente dentro de la mista carpeta donde se encuentra este fichero sobre el que estamos escribiendo.
+
+La lectura la realizamos teniendo en cuenta que el separador es ';'. 
+```{r}
+ValenBisi_2022 <- read_delim("data/ValenBisi_2022.csv", 
+                    delim = ";", escape_double = FALSE, 
+                    col_types = cols(fecha_creacion = col_skip(), 
+                    fecha_baja = col_skip()), trim_ws = TRUE)
+```
+Hemos eliminado dos de sus columnas ya que estas no aportaban ningún tipo de información a nuestro análisis, estas columnas eran:
+-*fecha_creacion*: fecha de creación del dataset.
+-*fecha_baja*: columna llena de valores faltantes 'NA'.
+
+Con la lectura anterior, hemos creado un nuevo data.frame llamado *'ValenBisi_2022'* que contiene nuestros datos organizados en las siguientes columnas:
+
+1.'**id**': columna que contiene el número de observaciones del conjunto de datos, enumeradas desde el 1 hasta el último registro.
+
+2.'**codigo_estación**': columna que designa, a cada estación de Valenbisi, un número concreto como único identificador de la misma.
+
+3.'**estacion**': columna que viene dada por numero de código de estación seguido por el nombre de la ubicación de cada estación concreta escrita en castellano y en un formato concreto donde el separador es '-'.
+
+4.'**tramo_horario**': columna que representa cada hora de un dia.
+
+5.'**numero_de_prestamos**': columna que representa el número de prestamos medios de bicicletas.
+
+6.'**numero_de_devoluciones**': columna que representa el número de devoluciones medias de bicicletas.
+
+
+Vemos cual es el tipo datos que tiene cada columna, utilizando la función ***'str()'*** que nos proporciona una descripción concisa de la estructura del dataframe:
+```r
+str(ValenBisi_2022)
+```
+Notamos que los elementos de las columnas '**id**', '**codigo_estacion**','**numero_de_prestamos**' y '**numero_de_devoluciones**' són de tipo numérico y los elementos de las columnas '**estacion**' y '**tramo_horario**' de tipo caracter.
+
+
+Buscamos posibles valores faltantes(missing values) en sus las distintas columnas:
+```{r}
+#Valores faltantes por columnas: vfalt_x_col_1
+(vfalt_x_col_1 <- sapply(ValenBisi_2022, function(x) sum(is.na(x))))
+```
+Acabamos de probar que no tenemos ningún valor faltante en ninguna de las columnas de nuestro dataframe, por lo que podemos seguir, por ahora, con tranquilidad con nuestro analisis.
+
+
+Como ya hemos observado, los elementos de '**tramo_horario**' son de tipo 'caracter' pero, realmente queremos que transformarlos a tipo 'factor' para futuros análisis. Lo hacemos a continuación a través de la función '***factor()***':
+```{r}
+ValenBisi_2022$tramo_horario <- factor(ValenBisi_2022$tramo_horario, ordered=TRUE)
+```
+
+Hacemos una comprovacion rápida de que, efectivamente, se ha realizado este cambio de tipo:
+```r
+class(ValenBisi_2022$tramo_horario)
+```
+Realizamos una tabla de frecuencia sobre nuestra variable para ver detalladamente cuantos valores hay de cada uno de los niveles presentes en la columna del tramo horario: 
+```{r}
+table(ValenBisi_2022$tramo_horario)
+```
+Notamos que los valores son ligeramente diferentes a cada tramo horario, lo que refleja que tendremos algunos casos de estaciones con valores faltantes por lo que respecta a alguna de las horas del dia determinadas.
+
+Por tal de seguir con el análisis de la tabla de frecuencias, comprobamos que valores diferentes puede tomar la columna '**codigo_estacion**' con ayuda de la función '***unique()***':
+```{r}
+unique(ValenBisi_2022$codigo_estacion)
+```
+Notamos que, pese a que los códigos del 1 al 276 són números consecutivos, hay algunos faltantes sobre los que no tendremos ningún dato, como puede ser el ejemplo de la estación 277, ya que vemos un salto de la estación 276 a la 298. Posteriormente, al realizar el ***'join'*** con el segundo dataset, comentaremos que es lo que ocurre realmente.
+
+Veamos que, efectivamente, el número de elementos de la columna **codigo_estacion*'** no corresponde con el máximo de los códigos que hay en ella, utilizamos las funciones ***length()*** y ***max()*** respectivamente:
+```{r}
+#Conteo del número de valores únicos en la columna codigo_estacion
+length(unique(ValenBisi_2022$codigo_estacion))
+
+#Máximo valor dentro de la columna codigo_estacion
+max(ValenBisi_2022$codigo_estacion)
+```
+
+Finalmente, hemos comprovado que tenemos datos de 277 estaciones diferentes, por lo que, volviendo al resultado de la tabla de frecuencias, tendremos que tenemos datos de todas las estaciones entre las 6h y las 15h, pero en las otras horas tenemos valores faltantes de alguna de las estaciones.
+
+
+## Conjunto de datos ValenBisi_disponibilidad
+
+Importamos los datos teniendo en cuenta que el separador es ';':
+```{r}
+ValenBisi_disponibilidad <- read.csv('./data/ValenBisi_disponibilidad.csv', sep=';')
+```
+
+Realmente, tal y como hemos comentado anteriormente, solo nos interesarán 3 de sus columnas: **Direccion**, **Numero**, y **geo_point_2D**. Notamos que tenemos 2 columnas, '**geo_point_2D**' y '**geo_shape**'(en formato JSON) para representar las coordenadas geograficas de cada estación, nos quedamos con **geo_point_2D**.
+
+ Vamos a detallar mejor porqué necesitamos cada una de estas columnas:
+1.-'**Direccion**': columna que nos da información detallada de la ubicación de cada una de las estaciones de biciletas, al igual que hacía la columna '**estacion**' del primer dataframe, pero con la diferencia de que esta parece tener un texto más clarificador que nos puede ayudar a posteriori.
+
+2.'**Numero**': su función es muy importante, ya que nos sirve como enlace directo con el anterior dataframe ya que los valores coinciden en cada una de las estaciones. Tanto esta columna como la de 2.'**codigo_estacion**', utilizan identificadores únicos para cada una de las estaciones, por lo que podemos unir los datos razonando a partir de esta variable.
+
+3.'**geo_point_2D**': columna que representa un par de coordenadas geográficas, donde el primer valor es la latitud y el segundo valor es la longitud.
+
+
+Nos quedamos con las columnas que realmente nos interesan usando el operador tubería ***'%>%'*** junto a ***'select()'*** de la siguiente forma:
+```{r}
+ValenBisi_disponibilidad <- ValenBisi_disponibilidad %>%
+                            select(Direccion,Numero,geo_shape, geo_point_2d)
+```
+
+Antes de juntar los dos data.frame, vamos a observar también detalladamente este nuevo:
+```{r}
+str(ValenBisi_disponibilidad)
+```
+Notamos que las columnas **Direccion** y **geo_point_2d** són de tipo 'caracter', en cambio, la columna **Numero**, es de tipo numérico(concretamente tipo 'int').
+ 
+ 
+Buscamos posibles valores faltantes(missing values) en las distintas columnas del dataframe:
+```{r}
+#Valores faltantes por columnas: vfalt_x_col_2
+(vfalt_x_col_2 <- sapply(ValenBisi_disponibilidad, function(x) sum(is.na(x))))
+```
+Acabamos de probar que no tenemos ningún valor faltante en ninguna de las columnas de nuestro dataframe, por lo que podemos seguir con nuestro analisis.
+
+
+Antes de efectuar la combinación de nuestros dos data.frames, primero vamos a comprovar, como hemos hecho anteriormente con la columna '**codigo_estacion**' del primer dataframe, qué valores diferentes puede tomar la columna '**Numero**' con ayuda de la función ***'unique()'*** y ***'sort()'***, ya que los datos no están ordenados tal como teniamos en el anterior dataframe, en orden ascendente de los valores de '**Numero**':
+```{r}
+sort(unique(ValenBisi_disponibilidad$Numero))
+```
+A simple vista podemos observar que no tenemos el último valor que sí aparecía en el anterior dataframe, el que tenia como identificador el número 298. Vamos a comprovar si este es realmente el único identificador faltante.
+
+```{r}
+#Conteo del número de valores únicos en la columna codigo_estacion
+length(unique(ValenBisi_disponibilidad$Numero))
+
+#Máximo valor dentro de la columna codigo_estacion
+max(ValenBisi_disponibilidad$Numero)
+```
+Notamos, con ayuda de la visualización en tabla, que en este caso si que coinciden el número total de los identificadores con el máximo de los valores de esta columna, por lo que no hay ningún valor faltante, tal como queríamos comprovar.
+
+Volvamos al dataframe *ValenBisi_2022* para observar que valores toma la fila que tiene como identificador o valor en la columna 'codigo_estacion', el número 298:
+```{r}
+ValenBisi_2022[ValenBisi_2022$codigo_estacion == 298, ]
+```
+Notamos que tenemos datos desde las 6 horas hasta las 15 horas.
+
+# Combinación de los dos conjuntos de datos
+
+Vamos a combinar los dos conjuntos de datos tal como hemos ido explicado anteriormente, usaremos ***'left_join()'***:
+```{r}
+ValenBisi <- ValenBisi_2022 %>%
+  left_join(ValenBisi_disponibilidad, by = c("codigo_estacion" = "Numero"))
+```
+
+Después de la combinación que acabamos de realizar, notamos que podemos haber obtenido posibles valores faltantes(missing values) en las distintas columnas del dataframe, ya que ***'left_join()'*** combina las filas de dos dataframes basándose en una o varias columnas comunes, y conserva todas las filas del dataframe izquierdo, llenando con valores nulos (NA) en las columnas del dataframe derecho cuando no hay coincidencias. Miremos que ha ocurrido:
+
+```{r}
+#Valores faltantes por columnas: vfalt
+(vfalt <- sapply(ValenBisi, function(x) sum(is.na(x))))
+```
+
+Notamos, tal como esperabamos, la presencia de 9 filas de observaciones faltantes de las columnas **Direccion** y **geo_point_2d**, concretamente aquellas que provienen del identificador 298 del que ya hemos hablado. Lo comprobamos filtrando las filas con, al menos, un valor faltante en alguna columna:
+
+```{r}
+ValenBisi[!complete.cases(ValenBisi), ]
+```
+Acabamos de comprobar que para el identificador 298 no tenemos ningun dato del segundo dataframe, por lo que no tenemos su geolocalización. Dado este caso e investigando sobre esta posible estación y los datos obtenidos hasta el momento, notamos que posiblemente no se trata de una estación, sinó, realmente, tal y como denota su nombre, de un taller donde se reparan las bicicletas(con horario de 6h-15h). Hablaremos de este tema más adelante.
+
+A continuación, vamos a observar cuantos datos faltantes tenemos sobre 'tramo_horaro' en cada una de las estaciones, ya que, tal como hemos observado anteriormente, como tenemos 277 estaciones distintas y el tramo horario es de 1 hora, deberiamos tener un dataframe con $24 \cdot 277= 6648$ filas, pero en cambio, tenemos que nuestro dataframe solamente tiene 6609:
+```{r}
+length(ValenBisi$id)
+```
+
+Tenemos entonces una pregunta que responder:
+¿Cuáles són las estaciones sobre las que nos faltan datos?
+
+Para posteriores analisis, separamos nuestro dataframe *ValenBisi* por tramos horarios usando ***'split()'***, que guarda en *ValenBisi_por_tramo*, cada uno de los dataframes referentes a cada tramo horario de la columna **tramo_horario** en una lista:
+```{r}
+ValenBisi_por_tramo <- split(ValenBisi, ValenBisi$tramo_horario)
+tramos_horarios <- levels(ValenBisi$tramo_horario)
+estaciones_faltantes_count <- ValenBisi %>% group_by(estacion) %>% summarise(Count_Tramo_Horario = sum(length(tramo_horario))) %>%
+arrange(Count_Tramo_Horario, decreasing = TRUE)
+head(estaciones_faltantes_count, 10)
+```
+Vemos que hay 9 estaciones que no tienen registro alguno en determinados tramos horarios. La suposición es por que no han alquilado ni devuelto ninguna bicicleta durante esos tramos ningún día del año. Un caso curioso es el de la estación ``298_TALLER`` que podemos intuir que abren de 6:00 a 15:00.
+Procedemos a sacar los estadísticos de préstamos y devoluciones por hora:
+```{r warning=FALSE}
+funestad <- function(x){
+  Max <- max(x, na.rm = TRUE) %>% round(2)
+  Min <- min(x, na.rm = TRUE) %>% round(2)
+  Media <- mean(x, na.rm = TRUE) %>% round(2)
+  SD <- sd(x, na.rm = TRUE) %>% round(2)
+  Mediana <- median(x, na.rm = TRUE) %>% round(2)
+  IQR <- IQR(x, na.rm = TRUE) %>% round(2)
+  Total <- sum(x, na.rm = TRUE) %>% round(2)
+  res <- c("Maximo" = Max, "Minimo" = Min, "Media" = Media,
+           "SD" = SD, "Mediana" = Mediana, "IQR" = IQR, "Total" = Total)
+  return(res)
+}
+TablaEsta <- ValenBisi %>% group_by(tramo_horario) %>% 
+  summarize(across(starts_with("num"), funestad)) %>% 
+  mutate(numbre_Esta = rep(c("Maximo", "Minimo", "Media", "SD", "Mediana",
+                             "IQR", "Total"), each = 1)) %>%
+  pivot_wider(names_from = numbre_Esta, values_from = starts_with("nume")) %>%
+  mutate(Balance_Total = numero_de_prestamos_Total - 
+           numero_de_devoluciones_Total)
+```
+
+Comprobamos si existen outliers en nuestras variables:
+
+ * Podemos probar con el criterio del boxplot, es decir que $x < Q1 - 1.5 IQR$, $x > Q3 + 1.5 IQR$
+ 
+```{r}
+initial_x <- "tramo_horario"
+interactive_boxplot <- plot_ly(ValenBisi, x = ~get(initial_x),
+                               y = ~numero_de_devoluciones, type = "box", 
+                               text = ~estacion, jitter = 0.3,
+                               marker = list(color = "rgba(255, 0, 0, 0.5)"), 
+                               fillcolor = "rgba(255,0,0,0.1)",
+                               line = list(color = "rgba(255,0,0,0.1)"))
+
+interactive_boxplot %>% layout(
+  title = "Devoluciones por tramo horario",
+  xaxis = list(title = "Tramo Horario"),
+  yaxis = list(title = "Número de devoluciones")
+)
+
+interactive_boxplot2 <- plot_ly(ValenBisi, x = ~get(initial_x), 
+                                y = ~numero_de_prestamos, type = "box", 
+                                text = ~estacion, jitter = 0.3,
+                              marker = list(color = "rgba(0, 0, 255, 0.5)"), 
+                              fillcolor = "rgba(0,0,255,0.1)",
+                               line = list(color = "rgba(0,0,255,0.1)"))
+
+interactive_boxplot2 %>% layout(
+  title = "Préstamos por tramo horario",
+  xaxis = list(title = "Tramo Horario"),
+  yaxis = list(title = "Número de préstamos")
+)
+```
+```{r}
+#outliers por tramo horario
+reglaboxplot <- function(x) {
+  #x <- x[!is.na(x)]
+  datsup <- quantile(x, 0.75, na.rm = TRUE)
+  datinf <- quantile(x, 0.25, na.rm = TRUE)
+  disp <- IQR(x)
+  datanom <- x[x > (datsup + 1.5 * disp) | x < (datinf - 1.5 * disp)]
+  return(datanom)
+}
+outbox_dev <- list()
+outbox_pres <- list()
+for (i in 1:24){
+outbox_dev[i] <- list(
+  reglaboxplot(ValenBisi_por_tramo[[i]]$numero_de_devoluciones))
+outbox_pres[i] <- list(
+  reglaboxplot(ValenBisi_por_tramo[[i]]$numero_de_prestamos))
+}
+```
+ * También usamos la regla 3 sigma, el identificador de Hampel o la regla de los percentiles para comprobar cuál es el identificador más robusto.
+
+```{r}
+# Regla 3 sigma
+reglasigma <- function(x) {
+  #x <- x[!is.na(x)]
+  stnd <- sd(x, na.rm = TRUE)
+  media <- mean(x, na.rm = TRUE)
+  datanom <- x[x > (3 * stnd + media)]
+  return(datanom)
+}
+out3sig_dev <- list()
+out3sig_pres <- list()
+for (i in 1:24){
+out3sig_dev[i] <- list(
+  reglasigma(ValenBisi_por_tramo[[i]]$numero_de_devoluciones))
+out3sig_pres[i] <- list(
+  reglasigma(ValenBisi_por_tramo[[i]]$numero_de_prestamos))
+}
+
+# Identificador Hampel
+reglahampel <- function(x) {
+  #x <- x[!is.na(x)]
+  mediana <- median(x, na.rm = TRUE)
+  MADM <- mad(x, na.rm = TRUE)
+  datanom <- x[x > (3 * MADM + mediana)]
+  return(datanom)
+}
+outham_dev <- list()
+outham_pres <- list()
+for (i in 1:24){
+outham_dev[i] <- list(
+  reglahampel(ValenBisi_por_tramo[[i]]$numero_de_devoluciones))
+outham_pres[i] <- list(
+  reglahampel(ValenBisi_por_tramo[[i]]$numero_de_prestamos))
+}
+
+# Percentiles
+reglapercentil <- function(x) {
+  #x <- x[!is.na(x)]
+  quant5 <- quantile(x, 0.05, na.rm = TRUE)
+  quant95 <- quantile(x, 0.95, na.rm = TRUE)
+  datanom <- x[x > quant95 | x < quant5]
+  return(datanom)
+}
+outper_dev <- list()
+outper_pres <- list()
+for (i in 1:24){
+outper_dev[i] <- list(
+  reglapercentil(ValenBisi_por_tramo[[i]]$numero_de_devoluciones))
+outper_pres[i] <- list(
+  reglapercentil(ValenBisi_por_tramo[[i]]$numero_de_prestamos))
+}
+```
+Observamos que con casi cualquier método (excepción los outliers por precentil), clasifica como valores extremos los valores altos.
+```{r}
+#paradas con mayor número de devoluciones y préstamos
+
+df_top10_pres <- ValenBisi[order(ValenBisi$tramo_horario,
+                                 -ValenBisi$numero_de_prestamos), ] %>% 
+  group_by(tramo_horario) %>%
+  slice_head(n = 10) %>%
+  select(c("tramo_horario", "numero_de_prestamos", "estacion")) %>%
+  ungroup()
+df_top10_pres
+
+df_top10_dev <- ValenBisi[order(ValenBisi$tramo_horario,
+                                -ValenBisi$numero_de_devoluciones), ] %>% 
+  group_by(tramo_horario) %>%
+  slice_head(n = 10) %>%
+  select(c("tramo_horario", "numero_de_devoluciones", "estacion")) %>%
+  ungroup()
+df_top10_dev
+```
+
+```{r}
+# plotbar acumulativa del top 10 préstamos y devoluciones
+barplot10_dev <- ggplot(df_top10_dev, aes(x = tramo_horario,
+                                          y = numero_de_devoluciones,
+                                          fill = numero_de_devoluciones,
+                                          text = paste("Número de devoluciones: ",
+                                                       numero_de_devoluciones, "<br>Estación: ", estacion))) +
+  geom_bar(stat = "identity") +
+  labs(title = "Devoluciones por hora", x = "Tramo Horario", y = "Devoluciones") +
+  scale_fill_gradient(name = "Número de Devoluciones") +
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+ggplotly(barplot10_dev, tooltip = "text")
+
+barplot10_pres <- ggplot(df_top10_pres, aes(x = tramo_horario,
+                                            y = numero_de_prestamos,
+                                            fill = numero_de_prestamos,
+                                            text = paste("Número de préstamos: ",
+                                                         numero_de_prestamos, "<br>Estación: ", estacion))) +
+  geom_bar(stat = "identity") +
+  labs(title = "Préstamos por hora", x = "Tramo Horario", y = "Préstamos") +
+  scale_fill_gradient(low = "#66c2a5", high = "#fc8d62", name = "Número de Préstamos") +
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+ggplotly(barplot10_pres, tooltip = "text")
+```
+
+```{r}
+# plotbar acumulativa total préstamos y devoluciones
+barplot_dev <- ggplot(ValenBisi, aes(x = tramo_horario,
+                                     y = numero_de_devoluciones,
+                                     fill = numero_de_devoluciones,
+                                     text = paste("Número de devoluciones: ",
+                                                  numero_de_devoluciones, "<br>Estación: ", estacion))) +
+  geom_bar(stat = "identity") +
+  labs(title = "Devoluciones por hora", x = "Tramo Horario", y = "Devoluciones") +
+  scale_fill_gradient(name = "Número de Devoluciones") +
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+ggplotly(barplot_dev, tooltip = "text")
+
+barplot_pres <- ggplot(ValenBisi, aes(x = tramo_horario,
+                                      y = numero_de_prestamos,
+                                      fill = numero_de_prestamos,
+                                      text = paste("Número de préstamos: ",
+                                                   numero_de_prestamos, "<br>Estación: ", estacion))) +
+  geom_bar(stat = "identity") +
+  labs(title = "Préstamos por hora", x = "Tramo Horario", y = "Préstamos") +
+  scale_fill_gradient(low = "#66c2a5", high = "#fc8d62", name = "Número de Préstamos") +
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+ggplotly(barplot_pres, tooltip = "text")
+```
+
+Análisis bivariante cuantitativas:
+
+```{r}
+corr1 <- ggplot(ValenBisi) + 
+  geom_point(aes(x = numero_de_devoluciones,
+                 y = numero_de_prestamos,
+                 color = tramo_horario, alpha = 0.5,
+                 text = paste("Tramo Horario: ",
+                              tramo_horario, "<br>Estación: ",
+                              estacion, "<br>Número de devoluciones: ",
+                              numero_de_devoluciones,
+                              "<br>Número de préstamos: ", numero_de_prestamos))) + 
+  labs(title = "Correlación número de préstamos y devoluciones",
+       x = "Número de devoluciones", y = "Número de préstamos",
+       color = "Tramo Horario", alpha = "") +
+  geom_smooth(aes(x = numero_de_devoluciones,
+                  y = numero_de_prestamos), method = "lm",
+              se = FALSE, color = "blue", size = 0.4, linetype = "dashed")
+  
+
+ggplotly(corr1, tooltip = "text")
+```
+Ahora observaremos los habitos nocturnos de los ciclistas:
+```{r}
+#Prueba flujo de personas (filtrar horas)
+tram_filt1 = "07H - 08H"
+tram_filt2 = "23H - 24H"
+Valenbisi_entre_horas <- ValenBisi %>% 
+  filter(tramo_horario < tram_filt1 | tramo_horario > tram_filt2)
+
+corr1filt <- ggplot(Valenbisi_entre_horas) + 
+  geom_point(aes(x = numero_de_devoluciones,
+                 y = numero_de_prestamos, color = tramo_horario,
+                 alpha = 0.5, text = paste("Tramo Horario: ",
+                                           tramo_horario, "<br>Estación: ",
+                                           estacion, "<br>Número de devoluciones: ",
+                                           numero_de_devoluciones,
+                                           "<br>Número de préstamos: ", numero_de_prestamos))) + 
+  labs(title = "Correlación número de préstamos y devoluciones desde las 00:00 a las 07:00",
+       x = "Número de devoluciones", y = "Número de préstamos", color = "Tramo Horario", alpha = "") +
+  geom_smooth(aes(x = numero_de_devoluciones,
+                  y = numero_de_prestamos), method = "lm",
+              se = FALSE, color = "blue", size = 0.4, linetype = "dashed")
+  
+
+ggplotly(corr1filt, tooltip = "text")
+```
+
+```{r}
+corr1_coef_spear <- cor(x = ValenBisi$numero_de_devoluciones,
+                        y = ValenBisi$numero_de_prestamos,
+                        use = "complete.obs", "spearman")
+corr1_coef_spear
+
+corr1_coef_pear <- cor(x = ValenBisi$numero_de_devoluciones,
+                       y = ValenBisi$numero_de_prestamos,
+                       use = "complete.obs", "pearson")
+corr1_coef_pear #correlación lineal (< 0.8)
+
+cov1_coef_spear <- cov(x = ValenBisi$numero_de_devoluciones,
+                       y = ValenBisi$numero_de_prestamos,
+                       use = "complete.obs", "spearman")
+cov1_coef_spear
+```
+
+```{r}
+#plot balance préstamos/devoluciones por hora (todas las estaciones)
+Balance_Total_plot <- ggplot(TablaEsta,
+                             aes(x = tramo_horario,
+                                 y = Balance_Total,
+                                 fill = factor(sign(Balance_Total)))) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = c("red", "blue"),
+                    name = "",
+                    labels = c("Devoluciones", "Préstamos")) +
+  labs(x = "Tramo Horario", y = "", title = "Balance Total") +
+  theme_minimal() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+Balance_Total_plot
+```
+Pero, ¿A lo largo del año hay el mismo número de devoluciones que de préstamos entre todas las paradas?
+
+```{r}
+sum(TablaEsta$Balance_Total)
+```
+Han desaparecido 2586 bicicletas.
+
+## Mapas
+Tratamiento de la columna geo_point_2d
+
+```{r}
+
+Paradas_bici<-ValenBisi_disponibilidad%>%
+  separate(geo_point_2d, into=c("latitud_y","longitud_x"), sep=",")%>% 
+  mutate(latitud_y = as.numeric(latitud_y))%>% 
+  mutate(longitud_x = as.numeric(longitud_x))
+
+```
+
+Creación del mapa general
+
+
+```{r}
+map <- leaflet() %>%
+  addTiles() %>%  
+  addMarkers(data = na.omit(Paradas_bici), ~longitud_x, ~latitud_y,
+             label = ~Direccion)
+# Print the map
+print(map)
+```
+
+Cambios en la base de datos completa
+
+```{r}
+ValenBisi<-ValenBisi%>%
+  separate(geo_point_2d, into=c("latitud_y","longitud_x"), sep=",")%>% 
+  mutate(latitud_y = as.numeric(latitud_y))%>% 
+  mutate(longitud_x = as.numeric(longitud_x))
+```
+
+
+Para tener un ejemplo de coloreo, voy a tomar el tramo 14-15 h y voy a hacer el mapa con las estaciones, con el color del número de préstamos que recibe cada una:
+
+```{r}
+color_pal <- colorNumeric(palette = "Blues", domain = 
+                            ValenBisi$numero_de_prestamos)
+
+tramo_14_15<-na.omit(ValenBisi[ValenBisi$tramo_horario=="14H - 15H",])
+
+map <- leaflet(tramo_14_15) %>%
+  addTiles() %>%
+  addCircleMarkers(~longitud_x, ~latitud_y, label = ~Direccion,
+                   color = "black",
+                   weight = 1,
+                   fillColor = ~color_pal(numero_de_prestamos),  # ajusta el tamaño de los círculos según tus necesidades
+                   radius = 5,
+                   fillOpacity = 1,
+                   popup = ~as.character(numero_de_prestamos))%>%
+  addLegend(position = "bottomright", pal = color_pal, values = ~numero_de_prestamos,
+            title = "Leyenda", opacity = 1)
+  
+# Imprimir el mapa
+print(map)
+
+```
+
+Veo que hay muchas paradas con muy poca concurrencia, y unas pocas con mucha, por lo que hago la raiz cuadrada a los datos para suavizarlos:
+
+```{r}
+color_pal <- colorNumeric(palette = "Blues", domain = ValenBisi$numero_de_prestamos^0.5)
+
+tramo_14_15<-na.omit(ValenBisi[ValenBisi$tramo_horario=="14H - 15H",])
+
+map <- leaflet(tramo_14_15) %>%
+  addTiles() %>%
+  addCircleMarkers(~longitud_x, ~latitud_y, label = ~Direccion,
+                   color = "black",
+                   weight = 1,
+                   fillColor = ~color_pal(numero_de_prestamos^0.5),  # ajusta el tamaño de los círculos según tus necesidades
+                   radius = 5,
+                   fillOpacity = 1,
+                   popup = ~as.character(numero_de_prestamos))%>%
+  addLegend(position = "bottomright", pal = color_pal, values = ~numero_de_prestamos^0.5,
+            title = "Leyenda", opacity = 1)
+  
+# Imprimir el mapa
+print(map)
+
+```
+
+
+creación de los datos por tramo:
+
+```{r}
+tramos<-sort(unique(ValenBisi$tramo_horario))
+for(i in 1:length(tramos)){
+  datos<-ValenBisi[ValenBisi$tramo_horario==tramos[i],]
+  datos<-na.omit(datos)
+  assign(paste0("df", i), datos)
+}
+```
+
+
+
+
+```{r}
+ui <- fluidPage(
+  sliderInput("slider", "Seleccionar Mapa", min = 1, max = 24, value = 1, step = 1),
+  leafletOutput("map")
+)
+
+server <- function(input, output, session) {
+  output$map <- renderLeaflet({
+    selected_df <- switch(input$slider,
+      "1" = df1,
+      "2" = df2,
+      "3" = df3,
+      "4" = df4,
+      "5" = df5,
+      "6" = df6,
+      "7" = df7,
+      "8" = df8,
+      "9" = df9,
+      "10" = df10,
+      "11" = df11,
+      "12" = df12,
+      "13" = df13,
+      "14" = df14,
+      "15" = df15,
+      "16" = df16,
+      "17" = df17,
+      "18" = df18,
+      "19" = df19,
+      "20" = df20,
+      "21" = df21,
+      "22" = df22,
+      "23" = df23,
+      "24" = df24
+    )
+    
+    leaflet() %>%
+      addTiles() %>%
+      addCircleMarkers(data = selected_df,~longitud_x, ~latitud_y, label = ~Direccion,
+                   color = "black",
+                   weight = 1,
+                   fillColor = ~color_pal(numero_de_prestamos^0.5),  # ajusta el tamaño de los círculos según tus necesidades
+                   radius = 5,
+                   fillOpacity = 1,
+                   popup = ~as.character(numero_de_prestamos))
+  })
+}
+
+shinyApp(ui, server)
+
+
+```
+
+Y lo hacemos de devoluciones
+
+```{r}
+ui <- fluidPage(
+  sliderInput("slider", "Seleccionar Mapa", min = 1, max = 24, value = 1, step = 1),
+  leafletOutput("map")
+)
+
+server <- function(input, output, session) {
+  output$map <- renderLeaflet({
+    selected_df <- switch(input$slider,
+      "1" = df1,
+      "2" = df2,
+      "3" = df3,
+      "4" = df4,
+      "5" = df5,
+      "6" = df6,
+      "7" = df7,
+      "8" = df8,
+      "9" = df9,
+      "10" = df10,
+      "11" = df11,
+      "12" = df12,
+      "13" = df13,
+      "14" = df14,
+      "15" = df15,
+      "16" = df16,
+      "17" = df17,
+      "18" = df18,
+      "19" = df19,
+      "20" = df20,
+      "21" = df21,
+      "22" = df22,
+      "23" = df23,
+      "24" = df24
+    )
+    
+    leaflet() %>%
+      addTiles() %>%
+      addCircleMarkers(data = selected_df,~longitud_x, ~latitud_y, label = ~Direccion,
+                   color = "black",
+                   weight = 1,
+                   fillColor = ~color_pal(numero_de_devoluciones^0.5),  # ajusta el tamaño de los círculos según tus necesidades
+                   radius = 5,
+                   fillOpacity = 1,
+                   popup = ~as.character(numero_de_devoluciones))
+  })
+}
+
+shinyApp(ui, server)
+```
+
+
+
+## Comparando con metro y tranvía
+
+Primero transformo la columna de coordenadas, igual que hice con la base de balenbisi:
+
+```{r}
+fgv_bocas <- read_delim("data/fgv-bocas.csv", 
+    delim = ";", escape_double = FALSE, trim_ws = TRUE)
+Paradas_metro<-fgv_bocas%>%
+  separate(geo_point_2d, into=c("latitud_y","longitud_x"), sep=",")%>% #Hago separate para crear las columnas latitud y longitud
+  mutate(latitud_y = as.numeric(latitud_y))%>% # Pasar las columnas a numérico para poder utilizarlas mas adelante
+  mutate(longitud_x = as.numeric(longitud_x))
+
+
+```
+muestro las bocas de metro en el mapa:
+
+```{r}
+map <- leaflet() %>%
+  addTiles() %>%  
+  addMarkers(data = na.omit(Paradas_metro), ~longitud_x, ~latitud_y, label = ~denominacion)
+# Print the map
+print(map)
+```
+Ahora creo una función que calcule la menor distancia entre cada parada de bici a una parada de metro:
+
+
+```{r}
+n<- nrow(Paradas_bici)
+m<-nrow(Paradas_metro)
+auxiliar<-numeric(n)
+
+
+
+for( i in 1:n){
+  d<-100
+  for(j in 1:m){
+    a<-c(Paradas_bici$longitud_x[i],Paradas_bici$latitud_y[i])
+    b<-c(Paradas_metro$longitud_x[j],Paradas_metro$latitud_y[j])
+    d0<-norm(a-b, type = "2")
+    if(d0<d){
+      d<-d0
+    }
+  }
+  auxiliar[i]<-d
+}
+str(auxiliar)
+str(ValenBisi_disponibilidad)
+
+ValenBisi_disponibilidad<-ValenBisi_disponibilidad%>%
+  mutate(distancia_metro_cercano=auxiliar)
+
+join_metros<-ValenBisi_disponibilidad%>%
+  select(Numero,distancia_metro_cercano)
+
+ValenBisi <- ValenBisi %>%
+  left_join(join_metros, by = c("codigo_estacion" = "Numero"))
+head(ValenBisi)
+```
+Y el mapa de las paradas por metro mas cercano
+
+```{r}
+color_pal <- colorNumeric(palette = "Blues", domain = ValenBisi$distancia_metro_cercano^0.5,reverse = T)
+
+tramo_14_15<-na.omit(ValenBisi[ValenBisi$tramo_horario=="14H - 15H",])
+
+map <- leaflet(tramo_14_15) %>%
+  addTiles() %>%
+  addCircleMarkers(~longitud_x, ~latitud_y, label = ~Direccion,
+                   color = "black",
+                   weight = 1,
+                   fillColor = ~color_pal(distancia_metro_cercano^0.5),  # ajusta el tamaño de los círculos según tus necesidades
+                   radius = 5,
+                   fillOpacity = 1,
+                   popup = ~as.character(distancia_metro_cercano))%>%
+  addLegend(position = "bottomright", pal = color_pal, values = ~distancia_metro_cercano^0.5,
+            title = "Leyenda", opacity = 1)
+  
+# Imprimir el mapa
+print(map)
+
+```
+
+```{r}
+cor(ValenBisi$numero_de_prestamos,ValenBisi$distancia_metro_cercano, use="complete.obs", method="pearson")
+cor(ValenBisi$numero_de_prestamos,ValenBisi$distancia_metro_cercano, use="complete.obs", method="spearman")
+```
+No vemos que haya una correlación, pero tiene sentido que en las zonas que tienen metros cerca, haya mas afluencia de gente, por lo que también se use mas el valenbisi.
+
+
+
