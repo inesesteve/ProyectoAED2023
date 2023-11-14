@@ -212,6 +212,9 @@ arrange(Count_Tramo_Horario, decreasing = TRUE)
 head(estaciones_faltantes_count, 10)
 ```
 Vemos que hay 9 estaciones que no tienen registro alguno en determinados tramos horarios. La suposición es por que no han alquilado ni devuelto ninguna bicicleta durante esos tramos ningún día del año. Un caso curioso es el de la estación ``298_TALLER`` que podemos intuir que abren de 6:00 a 15:00.
+
+## Análisis de estadísticos
+
 Procedemos a sacar los estadísticos de préstamos y devoluciones por hora:
 ```{r message=FALSE, warning=FALSE, include=FALSE}
 funestad <- function(x){
