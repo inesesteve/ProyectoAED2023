@@ -463,7 +463,7 @@ corr1
 ```
 Ahora observaremos los habitos nocturnos de los ciclistas:
 ```{r message=FALSE, warning=FALSE, include=FALSE}
-#Prueba flujo de personas (filtrar horas)
+
 tram_filt1 = "07H - 08H"
 tram_filt2 = "23H - 24H"
 Valenbisi_entre_horas <- ValenBisi %>% 
@@ -484,7 +484,7 @@ corr1filt <- ggplot(Valenbisi_entre_horas) +
               se = FALSE, color = "blue", size = 0.4, linetype = "dashed")
   
 corr1filt
-#ggplotly(corr1filt, tooltip = "text")
+
 ```
 
 ```{r message=FALSE, warning=FALSE, include=FALSE}
@@ -768,7 +768,7 @@ muestro las bocas de metro en el mapa:
 map <- leaflet() %>%
   addTiles() %>%  
   addMarkers(data = na.omit(Paradas_metro), ~longitud_x, ~latitud_y, label = ~denominacion)
-# Print the map
+
 map
 ```
 
@@ -826,14 +826,13 @@ map <- leaflet(tramo_14_15) %>%
   addCircleMarkers(~longitud_x, ~latitud_y, label = ~Direccion,
                    color = "black",
                    weight = 1,
-                   fillColor = ~color_pal(distancia_metro_cercano^0.5),  # ajusta el tamaño de los círculos según tus necesidades
+                   fillColor = ~color_pal(distancia_metro_cercano^0.5),  
                    radius = 5,
                    fillOpacity = 1,
                    popup = ~as.character(distancia_metro_cercano))%>%
   addLegend(position = "bottomright", pal = color_pal, values = ~distancia_metro_cercano^0.5,
             title = "Leyenda", opacity = 1)
   
-# Imprimir el mapa
 map
 
 ```
