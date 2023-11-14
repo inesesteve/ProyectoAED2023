@@ -13,9 +13,23 @@ output:
     extra_dependencies: longtable
 ---
 
-(todas las librerías)
-```{r}
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning=FALSE)
+```
+
+```r
 library(readr)
+library(dplyr)
+library(tidyr)
+library(shiny)
+library(leaflet)
+library(ggplot2)
+library(plotly)
+library(webshot2)
+```
+```{r include=FALSE}
+library(readr)
+library(dplyr)
 library(tidyr)
 library(shiny)
 library(leaflet)
