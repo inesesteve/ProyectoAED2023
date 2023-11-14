@@ -32,6 +32,7 @@ library(readr)
 library(tidyr)
 library(ggplot2)
 library(plotly)
+library(webshot2)
 ```
 
 Importamos los datos teniendo en cuenta que el separador es ';':
@@ -431,7 +432,7 @@ corr1_coef_spear <- cor(x = ValenBisi$numero_de_devoluciones, y = ValenBisi$nume
 corr1_coef_spear
 
 corr1_coef_pear <- cor(x = ValenBisi$numero_de_devoluciones, y = ValenBisi$numero_de_prestamos, use = "complete.obs", "pearson")
-corr1_coef_pear
+corr1_coef_pear #correlación lineal (< 0.8)
 
 cov1_coef_spear <- cov(x = ValenBisi$numero_de_devoluciones, y = ValenBisi$numero_de_prestamos, use = "complete.obs", "spearman")
 cov1_coef_spear
@@ -451,7 +452,7 @@ Pero, ¿A lo largo del año hay el mismo número de devoluciones que de préstam
 ```{r}
 sum(TablaEsta$Balance_Total)
 ```
-Han desaparecido 2586 bicicletas.
+Han desaparecido 2586 bicicletas.¿¿??
 
 
 
