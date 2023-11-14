@@ -422,7 +422,14 @@ for( i in 1:n){
   }
   auxiliar[i]<-d
 }
-```
+str(auxiliar)
+str(ValenBisi_disponibilidad)
 
+ValenBisi_disponibilidad<-ValenBisi_disponibilidad%>%
+  mutate(distancia_metro_cercano=auxiliar)
+ValenBisi <- ValenBisi_2022 %>%
+  left_join(ValenBisi_disponibilidad, by = c("codigo_estacion" = "Numero"))
+head(ValenBisi)
+```
 
 
